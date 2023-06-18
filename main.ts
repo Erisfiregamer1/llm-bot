@@ -3,6 +3,8 @@ import * as bing_chat from "./bots/bing_chat.ts";
 import * as gpt4 from "./bots/gpt_4.ts";
 import * as palm from "./bots/palm.ts";
 
+import type { Message } from "npm:discord.js";
+
 import client from "./client.ts"
 
 import "./slashcode.ts"
@@ -29,7 +31,7 @@ if ((await keyv.get("setup")) !== 26) {
   await keyv.set("setup", 26);
   console.log("[NOTICE] Some initial setup has been completed. Old conversations have been wiped.");
 }
-client.on("messageCreate", async (message: any) => {
+client.on("messageCreate", async (message: Message) => {
     if (message.author.bot || JSON.stringify(message.flags) === "4096") return; // The "4096" flag is the @silent flag on discord.
     if (message.channel.type === ChannelType.DM || new Set(JSON.parse(await keyv.get("channels"))).has(message.channel.id)) {
       let c = false;
@@ -40,10 +42,10 @@ client.on("messageCreate", async (message: any) => {
         c = true;
       }
   
-      let reply: any = {};
+      const reply: Record<string, unknown> = {};
   
       try {
-        const repliedTo = await message.fetchReference();
+        const repliedTo: Message = await message.fetchReference();
         reply.username = repliedTo.author.username;
   
         console.log(repliedTo.author);
@@ -52,7 +54,9 @@ client.on("messageCreate", async (message: any) => {
           reply.username = "you";
         }
         reply.content = repliedTo.content;
-      } catch (err) {}
+      } catch (_err) {
+        // Do nothing
+      }
   
       if (new Map(JSON.parse(await keyv.get("userbotmap"))).get(message.author.id) === "chatgpt" || c === true) {
         if (c === false) {
@@ -66,10 +70,14 @@ client.on("messageCreate", async (message: any) => {
             newobj[message.author.id] = [];
             await keyv.set("chatgptobject", JSON.stringify(newobj));
           }
+
+          const s: Map<string, number> = new Map(JSON.parse(await keyv.get("chatgptcmap")))
+
+          const mapres = s.get("lol") as number
   
           if (JSON.stringify(JSON.parse(await keyv.get("chatgptobject"))[message.author.id]) === JSON.stringify([])) {
             message.reply("You have no conversations! A new one will be made for you.");
-          } else if (JSON.parse(await keyv.get("chatgptobject"))[message.author.id][new Map(JSON.parse(await keyv.get("chatgptcmap"))).get(message.author.id)].last_used === "null") {
+          } else if (JSON.parse(await keyv.get("chatgptobject"))[message.author.id][mapres].last_used === "null") {
             message.reply("Conversation started! Do /wipe to reset it.");
           }
         }
@@ -90,10 +98,15 @@ client.on("messageCreate", async (message: any) => {
           msgobj.edit(res.resp);
         }
       } else if (new Map(JSON.parse(await keyv.get("userbotmap"))).get(message.author.id) === "bing_chat") {
+        const s: Map<string, number> = new Map(JSON.parse(await keyv.get("bingcmap")))
+
+        const mapres = s.get("lol") as number
+
         if (JSON.parse(await keyv.get("bingobject"))[message.author.id] === undefined) {
+          // Just do nothing.
         } else if (JSON.stringify(JSON.parse(await keyv.get("bingobject"))[message.author.id]) === JSON.stringify([])) {
           message.reply("You have no conversations! A new one will be made for you.");
-        } else if (JSON.parse(await keyv.get("bingobject"))[message.author.id][new Map(JSON.parse(await keyv.get("bingcmap"))).get(message.author.id)].last_used === "null") {
+        } else if (JSON.parse(await keyv.get("bingobject"))[message.author.id][mapres].last_used === "null") {
           message.reply("Conversation started! Do /wipe to reset it.");
         }
   
@@ -123,10 +136,16 @@ client.on("messageCreate", async (message: any) => {
           newobj[message.author.id] = [];
           await keyv.set("gpt4object", JSON.stringify(newobj));
         }
+
+        const s: Map<string, number> = new Map(JSON.parse(await keyv.get("gpt4cmap")))
+
+        const mapres = s.get("lol") as number
+        
+        // )).get(message.author.id)
   
         if (JSON.stringify(JSON.parse(await keyv.get("gpt4object"))[message.author.id]) === JSON.stringify([])) {
           message.reply("You have no conversations! A new one will be made for you.");
-        } else if (JSON.parse(await keyv.get("gpt4object"))[message.author.id][new Map(JSON.parse(await keyv.get("gpt4cmap"))).get(message.author.id)].last_used === "null") {
+        } else if (JSON.parse(await keyv.get("gpt4object"))[message.author.id][mapres].last_used === "null") {
           message.reply("Conversation started! Do /wipe to reset it.");
         }
   
@@ -149,10 +168,15 @@ client.on("messageCreate", async (message: any) => {
           msgobj.edit(res.resp);
         }
       } else if (new Map(JSON.parse(await keyv.get("userbotmap"))).get(message.author.id) === "palm") {
+        const s: Map<string, number> = new Map(JSON.parse(await keyv.get("palmcmap")))
+
+        const mapres = s.get("lol") as number
+
         if (JSON.parse(await keyv.get("palmobject"))[message.author.id] === undefined) {
+          // Just do nothing
         } else if (JSON.stringify(JSON.parse(await keyv.get("palmobject"))[message.author.id]) === JSON.stringify([])) {
           message.reply("You have no conversations! A new one will be made for you.");
-        } else if (JSON.parse(await keyv.get("palmobject"))[message.author.id][new Map(JSON.parse(await keyv.get("palmcmap"))).get(message.author.id)].last_used === "null") {
+        } else if (JSON.parse(await keyv.get("palmobject"))[message.author.id][mapres].last_used === "null") {
           message.reply("Conversation started! Do /wipe to reset it.");
         }
   

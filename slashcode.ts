@@ -21,7 +21,7 @@ import { REST } from "npm:@discordjs/rest";
 
 import { Routes } from "npm:discord-api-types/v9";
 
-import { ActionRowBuilder, StringSelectMenuBuilder, SlashCommandBuilder, AttachmentBuilder, EmbedBuilder, PermissionFlagsBits } from "npm:discord.js";
+import { ActionRowBuilder, StringSelectMenuBuilder, SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } from "npm:discord.js";
 
 const commands: any = [];
 
@@ -139,11 +139,14 @@ client.on("interactionCreate", async (interaction: any) => {
   }
   if (!interaction.isCommand()) return;
   if (interaction.commandName === "info") {
-    const embed = new EmbedBuilder()
+
+    const color: any = "#" + Math.floor(Math.random() * 16777215).toString(16)
+
+    const embed: any = new EmbedBuilder()
       .setTitle("About this bot!")
       .setDescription("Apologies, but /info wasn't written yet.")
       .setTimestamp()
-      .setColor("#" + Math.floor(Math.random() * 16777215).toString(16));
+      .setColor(color);
 
     await interaction.reply({ embeds: [embed], ephemeral: true });
   } else if (interaction.commandName === "wipe") {
@@ -212,8 +215,8 @@ client.on("interactionCreate", async (interaction: any) => {
 
       interaction.reply({ content: "Successfully wiped your conversation with GPT-4!", ephemeral: true });
     } else if (new Map(JSON.parse(await keyv.get("userbotmap"))).get(interaction.user.id) === "palm") {
-      let palmobject: any = JSON.parse(await keyv.get("palmobject"));
-      let palmcmap: any = new Map(JSON.parse(await keyv.get("palmcmap")));
+      const palmobject: any = JSON.parse(await keyv.get("palmobject"));
+      const palmcmap: any = new Map(JSON.parse(await keyv.get("palmcmap")));
 
       if (typeof palmobject[interaction.user.id] === "undefined") {
         interaction.reply({ content: "You have no conversations with PaLM! Say something in a bot channel to start one.", ephemeral: true });
@@ -236,7 +239,7 @@ client.on("interactionCreate", async (interaction: any) => {
       interaction.reply({ content: "Successfully wiped your conversation with PaLM!", ephemeral: true });
     }
   } else if (interaction.commandName === "add-channel") {
-    let channel: any = interaction.options.getChannel("channel");
+    const channel: any = interaction.options.getChannel("channel");
     if (channel.type !== 0) {
       interaction.reply({ content: "You can only add text channels!", ephemeral: true });
       return;
@@ -247,7 +250,7 @@ client.on("interactionCreate", async (interaction: any) => {
       return;
     }
 
-    let channelset = new Set(JSON.parse(await keyv.get("channels")));
+    const channelset = new Set(JSON.parse(await keyv.get("channels")));
 
     if (channelset.has(channel.id)) {
       interaction.reply({ content: "This channel is already added!", ephemeral: true });
@@ -260,7 +263,7 @@ client.on("interactionCreate", async (interaction: any) => {
 
     interaction.reply({ content: "Successfully added the channel to the bot!", ephemeral: true });
   } else if (interaction.commandName === "remove-channel") {
-    let channel = interaction.options.getChannel("channel");
+    const channel = interaction.options.getChannel("channel");
     if (channel.type !== 0) {
       interaction.reply({ content: "You can only remove text channels!", ephemeral: true });
       return;
@@ -271,7 +274,7 @@ client.on("interactionCreate", async (interaction: any) => {
       return;
     }
 
-    let channelset = new Set(JSON.parse(await keyv.get("channels")));
+    const channelset = new Set(JSON.parse(await keyv.get("channels")));
 
     if (!channelset.has(channel.id)) {
       interaction.reply({ content: "This channel is not in the channel list!", ephemeral: true });
@@ -304,10 +307,12 @@ client.on("interactionCreate", async (interaction: any) => {
       description: "Better version of ChatGPT. Powers Bing Chat. Has no internet.",
     };
 
+    const palmodel: any = Deno.env.get("PALM_MODEL")
+
     const palm = {
-      label: `PaLM (${Deno.env.get("PALM_MODEL").replace("models/", "")})`,
+      label: `PaLM (${palmodel.replace("models/", "")})`,
       value: "palm",
-      description: `Google's AI model. The specific model is ${Deno.env.get("PALM_MODEL").replace("models/", "")}.`,
+      description: `Google's AI model. The specific model is ${palmodel.replace("models/", "")}.`,
     };
 
     if (chatgptIsEnabled) options.push(chatgpt);
@@ -321,18 +326,18 @@ client.on("interactionCreate", async (interaction: any) => {
 
     interaction.reply({ content: "Select an AI to use!", components: [row], ephemeral: true });
   } else if (interaction.commandName === "add-document") {
-    let attachment = interaction.options.getAttachment("file");
+    const attachment = interaction.options.getAttachment("file");
 
-    let attachmentName = interaction.options.getString("file-name");
+    const attachmentName = interaction.options.getString("file-name");
 
     console.log(attachment);
 
     if (attachment.contentType === "text/plain; charset=utf-8") {
       await interaction.deferReply({ ephemeral: true });
 
-      let fstatement = await fetch(attachment.url);
+      const fstatement = await fetch(attachment.url);
 
-      let content = await fstatement.text();
+      const content = await fstatement.text();
 
       console.log(content);
 
@@ -341,8 +346,8 @@ client.on("interactionCreate", async (interaction: any) => {
 
         throw "The database is broken due to the switch to Deno! Major apologies."
 
-        interaction.editReply({ content: "The document has been uploaded and is now in the bot's information database!", ephemeral: true });
-      } catch (err) {
+        // interaction.editReply({ content: "The document has been uploaded and is now in the bot's information database!", ephemeral: true });
+      } catch (_err) {
         interaction.editReply({ content: "Something went wrong adding the document! The database may be disabled, please check the logs.", ephemeral: true });
       }
     } else {
@@ -352,7 +357,7 @@ client.on("interactionCreate", async (interaction: any) => {
   } else if (interaction.commandName === "create-image-bingchat") {
     await interaction.deferReply({ ephemeral: true });
 
-    let prompt = interaction.options.getString("prompt");
+    const prompt = interaction.options.getString("prompt");
 
     const id = crypto.randomUUID();
 
@@ -366,7 +371,7 @@ client.on("interactionCreate", async (interaction: any) => {
 
     let resp = `Here's your image${imageData.length === 1 ? "!" : "s!"} The prompt you gave me was "${prompt}":\n`;
 
-    imageData.forEach(async (url) => {
+    imageData.forEach((url: any) => {
       resp = resp.concat(`${url}\n`);
     });
 

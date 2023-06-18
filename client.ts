@@ -5,7 +5,7 @@ import { config } from "npm:dotenv";
 
 config();
 
-const client = new Client({
+const client: Client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent, GatewayIntentBits.GuildMembers, GatewayIntentBits.DirectMessages],
   partials: [
     // Partials.User,
