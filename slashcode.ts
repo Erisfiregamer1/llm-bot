@@ -22,7 +22,7 @@ import { REST } from "npm:@discordjs/rest";
 
 import { Routes } from "npm:discord-api-types/v9";
 
-import { ActionRowBuilder, StringSelectMenuBuilder, SlashCommandBuilder, AttachmentBuilder, EmbedBuilder, PermissionFlagsBits } from "discord.js";
+import { ActionRowBuilder, StringSelectMenuBuilder, SlashCommandBuilder, AttachmentBuilder, EmbedBuilder, PermissionFlagsBits } from "npm:discord.js";
 
 const commands = [];
 
