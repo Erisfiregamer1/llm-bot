@@ -1,4 +1,4 @@
-//import { getRelevantDocument } from "../vdb.ts";
+import { getRelevantDocument } from "../vdb.ts";
 
 import { VM } from "npm:vm2";
 
