@@ -26,8 +26,6 @@ client.on(Events.ClientReady, (c) => {
     });
 });
 
-client.on(Events.Debug, (message) => console.log("Debug:", message)); // Listen for debug messages
-
 await client.login(Deno.env.get("DISCORD_TOKEN"))
 
 export default client
