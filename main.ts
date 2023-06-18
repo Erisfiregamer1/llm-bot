@@ -5,6 +5,8 @@ import * as palm from "./bots/palm.ts";
 
 import client from "./client.ts"
 
+import "./slashcode.ts"
+
 import { keyv } from "./db.ts";
 
 import { ChannelType } from "npm:discord.js";
