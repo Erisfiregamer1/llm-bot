@@ -3,7 +3,7 @@ import { GoogleAuth } from "npm:google-auth-library";
 
 import { keyv } from "../db.ts";
 
-let isEnabled = true;
+let isEnabled = false;
 
 let client;
 
