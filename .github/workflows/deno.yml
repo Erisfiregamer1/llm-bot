@@ -32,15 +32,3 @@ jobs:
         
       - name: Compile LLM-Bot (Windows)
         run: deno compile --no-check --allow-all --target x86_64-unknown-linux-gnu --output compiled/llm-bot main.ts
-        
-      - name: Upload the Windows build
-        uses: actions/upload-artifact@v3.1.2
-        with:
-          name: llm-bot-windows
-          path: compiled/llm-bot.exe
-          
-      - name: Upload the Linux build
-        uses: actions/upload-artifact@v3.1.2
-        with:
-          name: llm-bot-linux
-          path: compiled/llm-bot
