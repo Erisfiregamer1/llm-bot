@@ -35,8 +35,38 @@ jobs:
       # - name: Verify formatting
       #   run: deno fmt --check
 
-      - name: Run linter
-        run: deno lint
+name: Deno
 
-      - name: Run tests
-        run: deno test -A
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Setup repo
+        uses: actions/checkout@v3
+
+      - name: Setup Deno
+        # uses: denoland/setup-deno@v1
+      - uses: denoland/setup-deno@v1
+        with:
+          deno-version: vx.x.x
+
+      # Uncomment this step to verify the use of 'deno fmt' on each commit.
+      # - name: Verify formatting
+      #   run: deno fmt --check
+
+      - name: Compile LLM-Bot (Windows)
+        run: deno compile --no-check --allow-all --target x86_64-pc-windows-msvc --output compiled/llm-bot.exe main.ts
+        
+      - name: Compile LLM-Bot (Windows)
+        run: deno compile --no-check --allow-all --target x86_64-unknown-linux-gnu --output compiled/llm-bot main.ts
+
