@@ -152,8 +152,8 @@ client.on("interactionCreate", async (interaction) => {
       return;
     }
     if (new Map(JSON.parse(await keyv.get("userbotmap"))).get(interaction.user.id) === "chatgpt") {
-      let chatgptobject = JSON.parse(await keyv.get("chatgptobject"));
-      let chatgptcmap = new Map(JSON.parse(await keyv.get("chatgptcmap")));
+      let chatgptobject: any = JSON.parse(await keyv.get("chatgptobject"));
+      let chatgptcmap: any = new Map(JSON.parse(await keyv.get("chatgptcmap")));
 
       if (chatgptobject[interaction.user.id].length === 0) {
         interaction.reply({ content: "You have no conversations with ChatGPT! Say something in a bot channel to start one.", ephemeral: true });
@@ -175,8 +175,8 @@ client.on("interactionCreate", async (interaction) => {
 
       interaction.reply({ content: "Successfully wiped your conversation with ChatGPT!", ephemeral: true });
     } else if (new Map(JSON.parse(await keyv.get("userbotmap"))).get(interaction.user.id) === "bing_chat") {
-      let bingobject = JSON.parse(await keyv.get("bingobject"));
-      let bingcmap = new Map(JSON.parse(await keyv.get("bingcmap")));
+      let bingobject: any = JSON.parse(await keyv.get("bingobject"));
+      let bingcmap: any = new Map(JSON.parse(await keyv.get("bingcmap")));
 
       if (bingobject[interaction.user.id].length === 0) {
         interaction.reply({ content: "You have no conversations with Bing Chat! Say something in a bot channel to start one.", ephemeral: true });
@@ -189,8 +189,8 @@ client.on("interactionCreate", async (interaction) => {
 
       interaction.reply({ content: "Successfully wiped your conversation with Bing Chat!", ephemeral: true });
     } else if (new Map(JSON.parse(await keyv.get("userbotmap"))).get(interaction.user.id) === "gpt4") {
-      let gpt4object = JSON.parse(await keyv.get("gpt4object"));
-      let gpt4cmap = new Map(JSON.parse(await keyv.get("gpt4cmap")));
+      let gpt4object: any = JSON.parse(await keyv.get("gpt4object"));
+      let gpt4cmap: any = new Map(JSON.parse(await keyv.get("gpt4cmap")));
 
       if (gpt4object[interaction.user.id].length === 0) {
         interaction.reply({ content: "You have no conversations with GPT-4! Say something in a bot channel to start one.", ephemeral: true });
@@ -212,8 +212,8 @@ client.on("interactionCreate", async (interaction) => {
 
       interaction.reply({ content: "Successfully wiped your conversation with GPT-4!", ephemeral: true });
     } else if (new Map(JSON.parse(await keyv.get("userbotmap"))).get(interaction.user.id) === "palm") {
-      let palmobject = JSON.parse(await keyv.get("palmobject"));
-      let palmcmap = new Map(JSON.parse(await keyv.get("palmcmap")));
+      let palmobject: any = JSON.parse(await keyv.get("palmobject"));
+      let palmcmap: any = new Map(JSON.parse(await keyv.get("palmcmap")));
 
       if (typeof palmobject[interaction.user.id] === "undefined") {
         interaction.reply({ content: "You have no conversations with PaLM! Say something in a bot channel to start one.", ephemeral: true });
