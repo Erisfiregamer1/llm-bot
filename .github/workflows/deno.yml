@@ -1,0 +1,54 @@
+# This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+
+# This workflow will install Deno then run `deno lint` and `deno test`.
+# For more information see: https://github.com/denoland/setup-deno
+
+name: Deno
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Setup repo
+        uses: actions/checkout@v3
+
+      - name: Setup Deno
+        # uses: denoland/setup-deno@v1
+      - uses: denoland/setup-deno@v1
+        with:
+          deno-version: vx.x.x
+
+      # Uncomment this step to verify the use of 'deno fmt' on each commit.
+      # - name: Verify formatting
+      #   run: deno fmt --check
+
+      - name: Compile LLM-Bot (Windows)
+        run: deno compile --no-check --allow-all --target x86_64-pc-windows-msvc --output compiled/llm-bot.exe main.ts
+        
+      - name: Compile LLM-Bot (Windows)
+        run: deno compile --no-check --allow-all --target x86_64-unknown-linux-gnu --output compiled/llm-bot main.ts
+        
+      - name: Upload the Windows build
+        uses: actions/upload-artifact@v3.1.2
+        with:
+          name: llm-bot-windows
+          path: compiled/llm-bot.exe
+          
+      - name: Upload the Linux build
+        uses: actions/upload-artifact@v3.1.2
+        with:
+          name: llm-bot-linux
+          path: compiled/llm-bot
