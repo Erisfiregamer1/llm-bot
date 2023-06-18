@@ -119,7 +119,12 @@ async function send(message, authorid) {
       }
     } catch (err) {
       console.error(`Oops, dropped a request on the floor with error "${err}"`);
+      if (err.includes("Your IP is blocked by BingAI.")) {
+        isEnabled = false
+        return "The machine running the bot is blocked by Bing Chat. This bot has been disabled automatically.";
+      } else {
       return "An error occured while using Bing Chat! Try again later, the backend APIs might be down.";
+      }
     }
   } else {
     return "This LLM is not available. Please contact the admins, and/or switch your chosen LLM to a different one.";
