@@ -29,7 +29,7 @@ if ((await keyv.get("setup")) !== 26) {
   await keyv.set("setup", 26);
   console.log("[NOTICE] Some initial setup has been completed. Old conversations have been wiped.");
 }
-client.on("messageCreate", async (message) => {
+client.on("messageCreate", async (message: any) => {
     if (message.author.bot || JSON.stringify(message.flags) === "4096") return; // The "4096" flag is the @silent flag on discord.
     if (message.channel.type === ChannelType.DM || new Set(JSON.parse(await keyv.get("channels"))).has(message.channel.id)) {
       let c = false;
@@ -40,7 +40,7 @@ client.on("messageCreate", async (message) => {
         c = true;
       }
   
-      let reply = {};
+      let reply: any = {};
   
       try {
         const repliedTo = await message.fetchReference();

@@ -8,11 +8,12 @@ config();
 
 let dbEnabled = true;
 
-const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-const url = Deno.env.get("SUPABASE_URL");
+const supabaseKey: any = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+const url: any = Deno.env.get("SUPABASE_URL");
+const apiKey: any = Deno.env.get("OPENAI_API_KEY")
 
-let client;
-let vectorStore;
+let client: any;
+let vectorStore: any;
 
 if (!supabaseKey) {
   console.log(`SUPABASE_SERVICE_ROLE_KEY is not defined in your .env, the database will be disabled.`);
@@ -28,7 +29,7 @@ if (!supabaseKey) {
 
     vectorStore = await SupabaseVectorStore.fromExistingIndex(
       new OpenAIEmbeddings({
-        azureApiKey: Deno.env.get("OPENAI_API_KEY"),
+        azureApiKey: apiKey,
       }),
       {
         client,
@@ -42,7 +43,7 @@ if (!supabaseKey) {
   }
 }
 
-export const addDocument = async (documentContent, documentName) => {
+export const addDocument = async (documentContent: any, documentName: any) => {
   if (!dbEnabled) {
     throw "Database disabled";
   }
@@ -63,7 +64,7 @@ export const addDocument = async (documentContent, documentName) => {
   return res;
 };
 
-export const getRelevantDocument = async (query) => {
+export const getRelevantDocument = async (query: any) => {
   if (!dbEnabled) {
     return "Database disabled";
   }

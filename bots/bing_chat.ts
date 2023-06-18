@@ -13,7 +13,7 @@ const sensitiveWords = ["@everyone", "nigger", "<@.*>", "nigga", "@here"];
 
 let isEnabled = true;
 
-let bingchat;
+let bingchat: any;
 
 if (Deno.env.get("BING_COOKIE") === undefined || Deno.env.get("BING_COOKIE") === "") {
   console.log("No Bing cookie set. Bing Chat has been disabled.");
@@ -36,11 +36,11 @@ if (Deno.env.get("BING_COOKIE") === undefined || Deno.env.get("BING_COOKIE") ===
   }
 }
 
-async function send(message, authorid) {
+async function send(message: any, authorid: any) {
   if (isEnabled === true) {
     try {
-      let bingobject = JSON.parse(await keyv.get("bingobject"));
-      let bingcmap = new Map(JSON.parse(await keyv.get("bingcmap")));
+      let bingobject: any = JSON.parse(await keyv.get("bingobject"));
+      let bingcmap: any = new Map(JSON.parse(await keyv.get("bingcmap")));
 
       if (!bingobject[authorid] || JSON.stringify(JSON.parse(await keyv.get("bingobject"))[authorid]) === JSON.stringify([])) {
         console.log("hi");

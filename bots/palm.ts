@@ -5,15 +5,17 @@ import { keyv } from "../db.ts";
 
 let isEnabled = false;
 
-let client;
+let client: any;
 
-if (Deno.env.get("PALM_API_KEY") === undefined || Deno.env.get("PALM_API_KEY") === "") {
+let key: any = Deno.env.get("PALM_API_KEY")
+
+if (key === undefined || key === "") {
   console.log("No PaLM API key set. PaLM has been disabled.");
   isEnabled = false;
 } else {
   try {
     client = new DiscussServiceClient({
-      authClient: new GoogleAuth().fromAPIKey(Deno.env.get("PALM_API_KEY")),
+      authClient: new GoogleAuth().fromAPIKey(key),
     });
   } catch (err) {
     console.log(`PaLM failed to start! The error was "${err}". PaLM has been disabled.`);
@@ -23,11 +25,11 @@ if (Deno.env.get("PALM_API_KEY") === undefined || Deno.env.get("PALM_API_KEY") =
 
 const context = "You are PaLM 2, a Large Language Model made by Google.";
 
-async function send(message, authorid, replyName, replyContent) {
+async function send(message: any, authorid: any, replyName?: any, replyContent?: any) {
   if (isEnabled === true) {
     try {
-      let palmobject = JSON.parse(await keyv.get("palmobject"));
-      let palmcmap = new Map(JSON.parse(await keyv.get("palmcmap")));
+      let palmobject: any = JSON.parse(await keyv.get("palmobject"));
+      let palmcmap: any = new Map(JSON.parse(await keyv.get("palmcmap")));
 
       if (!palmobject[authorid] || JSON.stringify(JSON.parse(await keyv.get("palmobject"))[authorid]) === JSON.stringify([])) {
         palmobject[authorid] = [];

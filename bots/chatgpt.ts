@@ -54,7 +54,7 @@ if (Deno.env.get("OPENAI_API_KEY") === undefined || Deno.env.get("OPENAI_API_KEY
   isEnabled = false;
 }
 
-async function handleRes(resObj, messages, authorid) {
+async function handleRes(resObj: any, messages: any, authorid: any) {
   let responseText = resObj.content;
 
   if (responseText === null) {
@@ -114,11 +114,11 @@ async function handleRes(resObj, messages, authorid) {
   }
 }
 
-async function send(message, authorid, replyName, replyContent, msgObj) {
+async function send(message: any, authorid: any, replyName?: any, replyContent?: any, msgObj?: any) {
   if (isEnabled === true) {
     try {
-      let chatgptobject = JSON.parse(await keyv.get("chatgptobject"));
-      let chatgptcmap = new Map(JSON.parse(await keyv.get("chatgptcmap")));
+      let chatgptobject: any = JSON.parse(await keyv.get("chatgptobject"));
+      let chatgptcmap: any = new Map(JSON.parse(await keyv.get("chatgptcmap")));
 
       let botdbmap = new Map(JSON.parse(await keyv.get("userdbmap")));
 
@@ -160,7 +160,7 @@ async function send(message, authorid, replyName, replyContent, msgObj) {
 
         let responseText = responseObj.content;
 
-        const resp = await handleRes(responseObj, msgs, authorid);
+        const resp: any = await handleRes(responseObj, msgs, authorid);
 
         responseObj = resp.data;
 
@@ -208,7 +208,7 @@ async function send(message, authorid, replyName, replyContent, msgObj) {
 
         let responseText = responseObj.content;
 
-        const resp = await handleRes(responseObj, msgs, authorid);
+        const resp: any = await handleRes(responseObj, msgs, authorid);
 
         responseObj = resp.data;
 
@@ -265,7 +265,7 @@ async function send(message, authorid, replyName, replyContent, msgObj) {
 
         let responseText = responseObj.content;
 
-        const resp = await handleRes(responseObj, msgs, authorid);
+        const resp: any = await handleRes(responseObj, msgs, authorid);
 
         responseObj = resp.data;
 

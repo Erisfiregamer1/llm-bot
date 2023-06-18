@@ -53,7 +53,7 @@ if (Deno.env.get("OPENAI_API_KEY") === undefined || Deno.env.get("OPENAI_API_KEY
   isEnabled = false;
 }
 
-async function handleRes(resObj, messages, authorid) {
+async function handleRes(resObj: any, messages: any, authorid: any) {
   let responseText = resObj.content;
 
   if (responseText === null) {
@@ -63,7 +63,7 @@ async function handleRes(resObj, messages, authorid) {
 
     if (data.name === "getInfo") {
       // let res = await getRelevantDocument(JSON.parse(data.arguments).request);
-      
+
       let res = "The information database is unfunctional at this time due to a switch to Deno."
 
       let responseObjData = await send(res, authorid, undefined, undefined, messages);
@@ -113,11 +113,11 @@ async function handleRes(resObj, messages, authorid) {
   }
 }
 
-async function send(message, authorid, replyName, replyContent, msgObj) {
+async function send(message: any, authorid: any, replyName?: any, replyContent?: any, msgObj?: any) {
   if (isEnabled === true) {
     try {
-      let gpt4object = JSON.parse(await keyv.get("gpt4object"));
-      let gpt4cmap = new Map(JSON.parse(await keyv.get("gpt4cmap")));
+      let gpt4object: any = JSON.parse(await keyv.get("gpt4object"));
+      let gpt4cmap: any = new Map(JSON.parse(await keyv.get("gpt4cmap")));
 
       let botdbmap = new Map(JSON.parse(await keyv.get("userdbmap")));
 
@@ -161,7 +161,7 @@ async function send(message, authorid, replyName, replyContent, msgObj) {
 
         let responseText = responseObj.content;
 
-        const resp = await handleRes(responseObj, msgs, authorid);
+        const resp: any = await handleRes(responseObj, msgs, authorid);
 
         responseObj = resp.data;
 
@@ -209,7 +209,7 @@ async function send(message, authorid, replyName, replyContent, msgObj) {
 
         let responseText = responseObj.content;
 
-        const resp = await handleRes(responseObj, msgs, authorid);
+        const resp: any = await handleRes(responseObj, msgs, authorid);
 
         responseObj = resp.data;
 
@@ -267,7 +267,7 @@ async function send(message, authorid, replyName, replyContent, msgObj) {
 
         let responseText = responseObj.content;
 
-        const resp = await handleRes(responseObj, msgs, authorid);
+        const resp: any = await handleRes(responseObj, msgs, authorid);
 
         responseObj = resp.data;
 

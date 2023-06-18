@@ -23,7 +23,7 @@ import { Routes } from "npm:discord-api-types/v9";
 
 import { ActionRowBuilder, StringSelectMenuBuilder, SlashCommandBuilder, AttachmentBuilder, EmbedBuilder, PermissionFlagsBits } from "npm:discord.js";
 
-const commands = [];
+const commands: any = [];
 
 const command1 = new SlashCommandBuilder();
 command1.setName("info");
@@ -105,14 +105,18 @@ for (let i = 1; i - 1 < botamt; i++) {
   let commandname = "command" + i;
   commands.push(eval(commandname));
 }
-const rest = new REST({ version: "10" }).setToken(Deno.env.get("DISCORD_TOKEN"));
+
+const appid: any = Deno.env.get("APP_ID")
+const token: any = Deno.env.get("DISCORD_TOKEN")
+
+const rest = new REST({ version: "10" }).setToken(token);
 
 // Send slash commands to Discord, create event handler.
 client.once("ready", async () => {
   try {
     console.log("Started refreshing application (/) commands.");
 
-    await rest.put(Routes.applicationCommands(Deno.env.get("APP_ID")), {
+    await rest.put(Routes.applicationCommands(appid), {
       body: commands,
     });
 
