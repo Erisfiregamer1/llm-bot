@@ -120,7 +120,8 @@ async function send(message, authorid) {
     } catch (err) {
       console.error(`Oops, dropped a request on the floor with error "${err}"`);
       if (err.message.includes("Your IP is blocked by BingAI.")) {
-        return "The machine running the bot is blocked by Bing Chat.";
+        isEnabled = false
+        return "The machine running the bot is blocked by Bing Chat. This LLM has been disabled.";
       } else {
       return "An error occured while using Bing Chat! Try again later, the backend APIs might be down.";
       }
