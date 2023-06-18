@@ -34,16 +34,26 @@ jobs:
         run: deno compile --no-check --allow-all --target x86_64-pc-windows-msvc --output compiled/llm-bot.exe main.ts
         
       - name: Compile LLM Bot (Linux, x86)
-        run: deno compile --no-check --allow-all --target x86_64-unknown-linux-gnu --output compiled/llm-bot main.ts
+        run: deno compile --no-check --allow-all --target x86_64-unknown-linux-gnu --output compiled/llm-bot.x86_64 main.ts
         
-      - name: Upload LLM Bot (Windows)
+      - name: Upload LLM Bot Artifact (Windows)
         uses: actions/upload-artifact@v3.1.2
         with:
           name: llm-bot-windows
           path: compiled/llm-bot.exe
           
-      - name: Upload LLM Bot (Windows)
+      - name: Upload LLM Bot Artifact (Linux)
         uses: actions/upload-artifact@v3.1.2
         with:
           name: llm-bot-linux
-          path: compiled/llm-bot
+          path: compiled/llm-bot.x86_64
+          
+      - uses: "marvinpinto/action-automatic-releases@latest"
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: "latest"
+          prerelease: true
+          title: "Automatic Build"
+          files: |
+              compiled/llm-bot.86_64
+              compiled/llm-bot.exe
