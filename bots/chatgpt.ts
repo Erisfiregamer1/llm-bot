@@ -1,4 +1,4 @@
-import { getRelevantDocument } from "../vdb.ts";
+// import { getRelevantDocument } from "../vdb.ts";
 
 import { VM } from "npm:vm2";
 
@@ -65,7 +65,7 @@ async function handleRes(resObj, messages, authorid) {
     if (data.name === "getInfo") {
       // let res = await getRelevantDocument(JSON.parse(data.arguments).request);
 
-      let res = "The database is unfunctional at this time due to a switch to Deno."
+      let res = "The information database is unfunctional at this time due to a switch to Deno."
 
       let responseObjData = await send(res, authorid, undefined, undefined, messages);
       let resObjNew = responseObjData.data;
