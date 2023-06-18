@@ -26,10 +26,9 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Setup Deno
-        # uses: denoland/setup-deno@v1
-        uses: denoland/setup-deno@9db7f66e8e16b5699a514448ce994936c63f0d54
+        uses: denoland/setup-deno@v1
         with:
-          deno-version: v1.34.x
+          deno-version: v1.x
           
       - name: Compile LLM-Bot (Windows)
         run: deno compile --no-check --allow-all --target x86_64-pc-windows-msvc --output compiled/llm-bot.exe main.ts
