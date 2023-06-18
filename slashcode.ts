@@ -5,8 +5,7 @@ import crypto from "node:crypto";
 
 import { isEnabled as palmIsEnabled } from "./bots/palm.ts";
 import { isEnabled as chatgptIsEnabled } from "./bots/chatgpt.ts";
-// import { isEnabled as bingIsEnabled } from "./bots/bing_chat.mjs";
-let bingIsEnabled = false;
+import { isEnabled as bingIsEnabled } from "./bots/bing_chat.ts";
 import { isEnabled as gpt4IsEnabled } from "./bots/gpt_4.ts";
 
 // import { addDocument } from "./vdb.mjs";
