@@ -47,5 +47,5 @@ jobs:
           prerelease: true
           title: "Automatic Build"
           files: |
-              compiled/llm-bot.86_64
+              compiled/llm-bot.x86_64
               compiled/llm-bot.exe
