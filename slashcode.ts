@@ -128,10 +128,10 @@ client.once("ready", async () => {
   }
 });
 
-client.on("interactionCreate", async (interaction) => {
+client.on("interactionCreate", async (interaction: any) => {
   if (interaction.isStringSelectMenu()) {
     if (interaction.customId === "set-ai") {
-      let userbotmap = new Map(JSON.parse(await keyv.get("userbotmap")));
+      let userbotmap: any = new Map(JSON.parse(await keyv.get("userbotmap")));
       userbotmap.set(interaction.user.id, interaction.values[0]);
       await keyv.set("userbotmap", JSON.stringify(Array.from(userbotmap.entries())));
       interaction.reply({ content: "Set your AI to " + interaction.values[0] + "!", ephemeral: true });
@@ -236,7 +236,7 @@ client.on("interactionCreate", async (interaction) => {
       interaction.reply({ content: "Successfully wiped your conversation with PaLM!", ephemeral: true });
     }
   } else if (interaction.commandName === "add-channel") {
-    let channel = interaction.options.getChannel("channel");
+    let channel: any = interaction.options.getChannel("channel");
     if (channel.type !== 0) {
       interaction.reply({ content: "You can only add text channels!", ephemeral: true });
       return;
