@@ -29,7 +29,7 @@ if (!supabaseKey) {
 
     vectorStore = await SupabaseVectorStore.fromExistingIndex(
       new OpenAIEmbeddings({
-        azureApiKey: apiKey,
+        openAIApiKey: apiKey,
       }),
       {
         client,
