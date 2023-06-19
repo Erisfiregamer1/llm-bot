@@ -36,7 +36,7 @@ if (Deno.env.get("BING_COOKIE") === undefined || Deno.env.get("BING_COOKIE") ===
   }
 }
 
-async function send(message: any, authorid: any) {
+async function send(message: string, authorid: string) {
   if (isEnabled === true) {
     try {
       let bingobject: any = JSON.parse(await keyv.get("bingobject"));
@@ -57,10 +57,10 @@ async function send(message: any, authorid: any) {
           responseText = responseText.replaceAll(regex, "[REMOVED]");
         }
         let splitting = false;
-        let responseTextSplit = [];
+        const responseTextSplit = [];
         if (responseText.length > 2000) {
           splitting = true;
-          for (var i = 0; i < responseText.length; i += 2000) {
+          for (let i = 0; i < responseText.length; i += 2000) {
             responseTextSplit.push(responseText.substr(i, 2000)); // Add the current substring to the array
           }
         }
@@ -91,7 +91,7 @@ async function send(message: any, authorid: any) {
           responseText = responseText.replaceAll(regex, "[REMOVED]");
         }
         let splitting = false;
-        let responseTextSplit = [];
+        const responseTextSplit = [];
         if (responseText.length > 2000) {
           splitting = true;
           for (var i = 0; i < responseText.length; i += 2000) {
