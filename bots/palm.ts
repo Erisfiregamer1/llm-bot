@@ -1,35 +1,33 @@
-import { DiscussServiceClient } from "npm:@google-ai/generativelanguage";
-import { GoogleAuth } from "npm:google-auth-library";
-
 import { keyv } from "../db.ts";
 
-let isEnabled = false;
+let isEnabled = true;
 
 let client: any;
+
+type Message = {
+  author: string;
+  content: string;
+};
+
+type palmres = {
+  candidates: Message[];
+  messages: Message[];
+};
 
 let key: any = Deno.env.get("PALM_API_KEY")
 
 if (key === undefined || key === "") {
   console.log("No PaLM API key set. PaLM has been disabled.");
   isEnabled = false;
-} else {
-  try {
-    client = new DiscussServiceClient({
-      authClient: new GoogleAuth().fromAPIKey(key),
-    });
-  } catch (err) {
-    console.log(`PaLM failed to start! The error was "${err}". PaLM has been disabled.`);
-    isEnabled = false;
-  }
 }
 
 const context = "You are PaLM 2, a Large Language Model made by Google.";
 
-async function send(message: any, authorid: any, replyName?: any, replyContent?: any) {
+async function send(message: string, authorid: string, replyName?: unknown, replyContent?: unknown) {
   if (isEnabled === true) {
     try {
-      let palmobject: any = JSON.parse(await keyv.get("palmobject"));
-      let palmcmap: any = new Map(JSON.parse(await keyv.get("palmcmap")));
+      const palmobject: any = JSON.parse(await keyv.get("palmobject"));
+      const palmcmap: any = new Map(JSON.parse(await keyv.get("palmcmap")));
 
       if (!palmobject[authorid] || JSON.stringify(JSON.parse(await keyv.get("palmobject"))[authorid]) === JSON.stringify([])) {
         palmobject[authorid] = [];
@@ -38,28 +36,30 @@ async function send(message: any, authorid: any, replyName?: any, replyContent?:
         keyv.set("palmobject", JSON.stringify(palmobject));
         keyv.set("palmcmap", JSON.stringify([...palmcmap]));
 
-        let messages = [];
+        let messages: Array<unknown> = [];
 
         messages.push({ author: "0", content: message });
 
-        const res = await client.generateMessage({
-          model: Deno.env.get("PALM_MODEL"),
-          temperature: 0.25,
-          candidateCount: 1,
-          prompt: {
-            context: context,
-            // required, alternating prompt/response messages
-            messages: messages,
-          },
-        });
+        const unform_res: Response = await fetch(`https://generativelanguage.googleapis.com/v1beta2/${Deno.env.get("PALM_MODEL")}:generateMessage?key='${Deno.env.get("PALM_API_KEY")}`, {
+          body: JSON.stringify({
+            temperature: 0.25,
+            candidateCount: 1,
+            prompt: {
+              context: context,
+              messages: messages,
+            }
+          }),
+        })
 
-        if (JSON.stringify(res[0].candidates) === JSON.stringify([])) {
+        const res: palmres = await unform_res.json()
+
+        if (JSON.stringify(res.candidates) === JSON.stringify([])) {
           throw "ncf";
         }
 
-        messages = res[0].messages; // Overwrite with returned messages for consistency
+        messages = res.messages; // Overwrite with returned messages for consistency
 
-        messages.push(res[0].candidates[0]); // ... and inject the new message
+        messages.push(res.candidates[0]); // ... and inject the new message
 
         if (palmobject[authorid].length === 0) {
           palmobject[authorid][0] = {};
@@ -71,29 +71,32 @@ async function send(message: any, authorid: any, replyName?: any, replyContent?:
 
         keyv.set("palmobject", JSON.stringify(palmobject));
 
-        return res[0].candidates[0].content;
+        return res.candidates[0].content;
       } else {
         let messages = palmobject[authorid][palmcmap.get(authorid)].messages;
 
         messages.push({ author: "0", content: message });
 
-        const res = await client.generateMessage({
-          model: Deno.env.get("PALM_MODEL"),
-          temperature: 0.25,
-          candidateCount: 1,
-          prompt: {
-            context: context,
-            messages: messages,
-          },
-        });
+        const unform_res: Response = await fetch(`https://generativelanguage.googleapis.com/v1beta2/${Deno.env.get("PALM_MODEL")}:generateMessage?key='${Deno.env.get("PALM_API_KEY")}`, {
+          body: JSON.stringify({
+            temperature: 0.25,
+            candidateCount: 1,
+            prompt: {
+              context: context,
+              messages: messages,
+            }
+          }),
+        })
 
-        if (JSON.stringify(res[0].candidates) === JSON.stringify([])) {
+        const res: palmres = await unform_res.json()
+
+        if (JSON.stringify(res.candidates) === JSON.stringify([])) {
           throw "ncf";
         }
 
-        messages = res[0].messages; // Overwrite with returned messages for consistency
+        messages = res.messages; // Overwrite with returned messages for consistency
 
-        messages.push(res[0].candidates[0]); // ... and inject the new message
+        messages.push(res.candidates[0]); // ... and inject the new message
 
         if (palmobject[authorid].length === 0) {
           palmobject[authorid][0] = {};
@@ -105,7 +108,7 @@ async function send(message: any, authorid: any, replyName?: any, replyContent?:
 
         keyv.set("palmobject", JSON.stringify(palmobject));
 
-        return res[0].candidates[0].content;
+        return res.candidates[0].content;
       }
     } catch (err) {
       if (err === "ncf") {
