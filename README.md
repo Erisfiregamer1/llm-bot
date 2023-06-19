@@ -23,4 +23,4 @@ SUPABASE_SERVICE_ROLE_KEY=""
 ```
 
 3. Run the bot using Deno: `deno run --allow-net --allow-read --allow-env main.ts`<br>
-  3.1: Or, run the direct file how you normally would. Check the Releases or Github Actions for the file.
+  3.1: Or, run the direct file how you normally would. Check Github Actions for the files you'll need.
