@@ -39,13 +39,3 @@ jobs:
         with:
           name: llm-bot-linux
           path: compiled/llm-bot.x86_64
-          
-      - uses: "marvinpinto/action-automatic-releases@latest"
-        with:
-          repo_token: "${{ secrets.GH_TOKEN }}"
-          automatic_release_tag: "latest"
-          prerelease: true
-          title: "Automatic Build"
-          files: |
-              compiled/llm-bot.x86_64
-              compiled/llm-bot.exe
