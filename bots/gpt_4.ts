@@ -1,4 +1,4 @@
-// import { getRelevantDocument } from "../vdb.mjs";
+import { getRelevantDocument } from "../vdb.ts";
 
 import { VM } from "npm:vm2";
 
@@ -62,9 +62,7 @@ async function handleRes(resObj: any, messages: any, authorid: any) {
     let data = resObj.function_call;
 
     if (data.name === "getInfo") {
-      // let res = await getRelevantDocument(JSON.parse(data.arguments).request);
-
-      let res = "The information database is unfunctional at this time due to a switch to Deno."
+      let res = await getRelevantDocument(JSON.parse(data.arguments).request);
 
       let responseObjData = await send(res, authorid, undefined, undefined, messages);
       let resObjNew = responseObjData.data;
@@ -78,7 +76,7 @@ async function handleRes(resObj: any, messages: any, authorid: any) {
         responseText = responseText.replaceAll(regex, "[REMOVED]");
       }
 
-      return { resp: responseText, data: resObjNew };
+      return { resp: responseText, data: resObjNew, messages: messages };
     } else if (data.name === "eval") {
       let res;
 

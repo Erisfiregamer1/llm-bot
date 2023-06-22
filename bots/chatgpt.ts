@@ -1,4 +1,4 @@
-// import { getRelevantDocument } from "../vdb.ts";
+import { getRelevantDocument } from "../vdb.ts";
 
 import { VM } from "npm:vm2";
 
@@ -63,9 +63,7 @@ async function handleRes(resObj: any, messages: any, authorid: any) {
     let data = resObj.function_call;
 
     if (data.name === "getInfo") {
-      // let res = await getRelevantDocument(JSON.parse(data.arguments).request);
-
-      let res = "The information database is unfunctional at this time due to a switch to Deno."
+      let res = await getRelevantDocument(JSON.parse(data.arguments).request);
 
       let responseObjData = await send(res, authorid, undefined, undefined, messages);
       let resObjNew = responseObjData.data;
@@ -79,7 +77,7 @@ async function handleRes(resObj: any, messages: any, authorid: any) {
         responseText = responseText.replaceAll(regex, "[REMOVED]");
       }
 
-      return { resp: responseText, data: resObjNew };
+      return { resp: responseText, data: resObjNew, messages: messages };
     } else if (data.name === "eval") {
       let res;
 
@@ -210,6 +208,8 @@ async function send(message: any, authorid: any, replyName?: any, replyContent?:
 
         const resp: any = await handleRes(responseObj, msgs, authorid);
 
+        console.log(resp)
+
         responseObj = resp.data;
 
         responseText = resp.resp;
@@ -237,6 +237,8 @@ async function send(message: any, authorid: any, replyName?: any, replyContent?:
 
         return { resp: responseText, data: responseObj, messages: msgs };
       } else {
+        console.log(chatgptobject[authorid][chatgptcmap.get(authorid)])
+
         let msgs = [...chatgptobject[authorid][chatgptcmap.get(authorid)].messages];
 
         msgs.push({
@@ -266,6 +268,8 @@ async function send(message: any, authorid: any, replyName?: any, replyContent?:
         let responseText = responseObj.content;
 
         const resp: any = await handleRes(responseObj, msgs, authorid);
+
+        console.log(resp)
 
         responseObj = resp.data;
 
