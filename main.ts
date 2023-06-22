@@ -73,7 +73,7 @@ client.on("messageCreate", async (message: Message) => {
 
           const s: Map<string, number> = new Map(JSON.parse(await keyv.get("chatgptcmap")))
 
-          const mapres = s.get("lol") as number
+          const mapres = s.get(message.author.id) as number
   
           if (JSON.stringify(JSON.parse(await keyv.get("chatgptobject"))[message.author.id]) === JSON.stringify([])) {
             message.reply("You have no conversations! A new one will be made for you.");
@@ -100,7 +100,7 @@ client.on("messageCreate", async (message: Message) => {
       } else if (new Map(JSON.parse(await keyv.get("userbotmap"))).get(message.author.id) === "bing_chat") {
         const s: Map<string, number> = new Map(JSON.parse(await keyv.get("bingcmap")))
 
-        const mapres = s.get("lol") as number
+        const mapres = s.get(message.author.id) as number
 
         if (JSON.parse(await keyv.get("bingobject"))[message.author.id] === undefined) {
           // Just do nothing.
@@ -139,7 +139,7 @@ client.on("messageCreate", async (message: Message) => {
 
         const s: Map<string, number> = new Map(JSON.parse(await keyv.get("gpt4cmap")))
 
-        const mapres = s.get("lol") as number
+        const mapres = s.get(message.author.id) as number
         
         // )).get(message.author.id)
   
@@ -170,7 +170,7 @@ client.on("messageCreate", async (message: Message) => {
       } else if (new Map(JSON.parse(await keyv.get("userbotmap"))).get(message.author.id) === "palm") {
         const s: Map<string, number> = new Map(JSON.parse(await keyv.get("palmcmap")))
 
-        const mapres = s.get("lol") as number
+        const mapres = s.get(message.author.id) as number
 
         if (JSON.parse(await keyv.get("palmobject"))[message.author.id] === undefined) {
           // Just do nothing
@@ -181,10 +181,10 @@ client.on("messageCreate", async (message: Message) => {
         }
   
         const msgobj = await message.reply("Sending message...");
-        const res = await palm.send(message.content, message.author.id, reply.username, reply.content);
-        if (Array.isArray(res)) {
+        const res = await palm.send(message.content, message.author.id);
+        if (Array.isArray(res.resp)) {
           let i = 0;
-          res.forEach(async (element) => {
+          res.resp.forEach(async (element: string) => {
             if (i === 0) {
               i++;
               await msgobj.edit(element);

@@ -1,4 +1,4 @@
-import { BingAIClient } from "npm:@waylaidwanderer/chatgpt-api";
+import BingAIClient from "./lib/bing_chat.mjs";
 
 import Keyv from "npm:keyv";
 
@@ -22,7 +22,7 @@ if (Deno.env.get("BING_COOKIE") === undefined || Deno.env.get("BING_COOKIE") ===
   try {
     bingchat = new BingAIClient({
       userToken: Deno.env.get("BING_COOKIE"),
-      debug: true,
+      debug: false,
       cache: new Keyv({
         store: new KeyvFile({
             filename: "./db.json"
@@ -125,7 +125,7 @@ async function send(message: string, authorid: string) {
       } else {
       return "An error occured while using Bing Chat! Try again later, the backend APIs might be down.";
       }
-    }
+        }
   } else {
     return "This LLM is not available. Please contact the admins, and/or switch your chosen LLM to a different one.";
   }
