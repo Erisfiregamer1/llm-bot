@@ -1,4 +1,4 @@
-import BingAIClient from "./lib/bing_chat.mjs";
+import BingAIClient from "npm:@waylaidwanderer/chatgpt-api";
 
 import Keyv from "npm:keyv";
 
@@ -22,7 +22,7 @@ if (Deno.env.get("BING_COOKIE") === undefined || Deno.env.get("BING_COOKIE") ===
   try {
     bingchat = new BingAIClient({
       userToken: Deno.env.get("BING_COOKIE"),
-      debug: false,
+      debug: true,
       cache: new Keyv({
         store: new KeyvFile({
             filename: "./db.json"

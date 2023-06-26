@@ -1,6 +1,6 @@
 import client from "./client.ts";
 
-import { BingImageCreator } from "npm:@timefox/bic-sydney";
+import { BingImageCreator } from "https://esm.sh/@timefox/bic-sydney";
 import crypto from "node:crypto";
 
 import { isEnabled as palmIsEnabled } from "./bots/palm.ts";

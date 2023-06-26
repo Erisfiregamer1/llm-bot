@@ -193,7 +193,7 @@ client.on("messageCreate", async (message: Message) => {
             }
           });
         } else {
-          msgobj.edit(res);
+          msgobj.edit(res.resp);
         }
       }
     }
