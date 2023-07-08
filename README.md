@@ -9,7 +9,6 @@ A Discord bot for interacting with LLMs.
 1. Create a .env file.
 2. Populate the file with these values:
 ```
-
 DISCORD_TOKEN=""
 OPENAI_API_KEY=""
 BING_COOKIE=""
