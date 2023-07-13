@@ -1,6 +1,6 @@
 import { getRelevantDocument } from "../vdb.ts";
 
-import { VM } from "npm:vm2";
+// import { VM } from "npm:vm2";
 
 const currentDate = new Date().toISOString();
 
@@ -82,7 +82,8 @@ async function handleRes(resObj: any, messages: any, authorid: any) {
       let res;
 
       try {
-        res = new VM().run(JSON.parse(data.arguments).command);
+        // res = new VM().run(JSON.parse(data.arguments).command);
+        res = "eval is disabled due to a severe vulnerability in vm2"
       } catch (err) {
         res = err;
       }
