@@ -1,5 +1,5 @@
 // Here we go again.
-import { Client, Events, ActivityType, GatewayIntentBits, Partials } from "npm:discord.js";
+import { Client, Events, ActivityType, GatewayIntentBits, Partials } from "npm:discord.js@dev";
 
 import { config } from "npm:dotenv";
 
