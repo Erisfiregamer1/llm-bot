@@ -1,12 +1,12 @@
 import { getRelevantDocument } from "../vdb.ts";
 
-import { VM } from "npm:vm2";
+//import { VM } from "npm:vm2";
 
 const currentDate = new Date().toISOString();
 
 const sysMsg = `You are GPT-4, an LLM created by OpenAI. Your messages are being proxied through Discord, so use Markdown for responses. Knowledge cutoff: 2021-09-01. Current date (In ISO format): ${currentDate}`;
 
-const model = "gpt-4-0613";
+const model = "gpt-4";
 
 const functions = [
   {

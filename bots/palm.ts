@@ -21,9 +21,7 @@ let model: any = Deno.env.get("PALM_MODEL")
 if (key === undefined || key === "") {
   console.log("No PaLM API key set. PaLM has been disabled.");
   isEnabled = false;
-}
-
-if (model === undefined || model === "") {
+} else if (model === undefined || model === "") {
   console.log("No PaLM model set. PaLM has been disabled.");
   isEnabled = false;
 }
