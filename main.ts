@@ -3,8 +3,6 @@ import * as bing_chat from "./bots/bing_chat.ts";
 import * as gpt4 from "./bots/gpt_4.ts";
 import * as palm from "./bots/palm.ts";
 
-import type { Message } from "npm:discord.js";
-
 import client from "./client.ts"
 
 import "./slashcode.ts"
@@ -31,7 +29,7 @@ if ((await keyv.get("setup")) !== 26) {
   await keyv.set("setup", 26);
   console.log("[NOTICE] Some initial setup has been completed. Old conversations have been wiped.");
 }
-client.on("messageCreate", async (message: Message) => {
+client.on("messageCreate", async (message) => {
     if (message.author.bot || JSON.stringify(message.flags) === "4096") return; // The "4096" flag is the @silent flag on discord.
     if (message.channel.type === ChannelType.DM || new Set(JSON.parse(await keyv.get("channels"))).has(message.channel.id)) {
       let c = false;
@@ -45,7 +43,7 @@ client.on("messageCreate", async (message: Message) => {
       const reply: Record<string, unknown> = {};
   
       try {
-        const repliedTo: Message = await message.fetchReference();
+        const repliedTo = await message.fetchReference();
         reply.username = repliedTo.author.username;
   
         console.log(repliedTo.author);

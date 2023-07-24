@@ -21,7 +21,8 @@ import { REST } from "npm:@discordjs/rest";
 
 import { Routes } from "npm:discord-api-types/v9";
 
-import { ActionRowBuilder, StringSelectMenuBuilder, SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } from "npm:discord.js";
+import { ActionRowBuilder, StringSelectMenuBuilder, SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits, ColorResolvable } from "npm:discord.js";
+import { Embed } from "npm:discord.js@dev";
 
 const commands: any = [];
 
@@ -102,12 +103,12 @@ command16.addStringOption((option) => option.setName("prompt").setDescription("P
 
 const botamt = 16;
 for (let i = 1; i - 1 < botamt; i++) {
-  let commandname = "command" + i;
+  const commandname = "command" + i;
   commands.push(eval(commandname));
 }
 
-const appid: any = Deno.env.get("APP_ID")
-const token: any = Deno.env.get("DISCORD_TOKEN")
+const appid: string = Deno.env.get("APP_ID")!
+const token: string = Deno.env.get("DISCORD_TOKEN")!
 
 const rest = new REST({ version: "10" }).setToken(token);
 
@@ -128,10 +129,10 @@ client.once("ready", async () => {
   }
 });
 
-client.on("interactionCreate", async (interaction: any) => {
+client.on("interactionCreate", async (interaction) => {
   if (interaction.isStringSelectMenu()) {
     if (interaction.customId === "set-ai") {
-      let userbotmap: any = new Map(JSON.parse(await keyv.get("userbotmap")));
+      const userbotmap: Map<string, string> = new Map(JSON.parse(await keyv.get("userbotmap")));
       userbotmap.set(interaction.user.id, interaction.values[0]);
       await keyv.set("userbotmap", JSON.stringify(Array.from(userbotmap.entries())));
       interaction.reply({ content: "Set your AI to " + interaction.values[0] + "!", ephemeral: true });
@@ -140,9 +141,11 @@ client.on("interactionCreate", async (interaction: any) => {
   if (!interaction.isCommand()) return;
   if (interaction.commandName === "info") {
 
-    const color: any = "#" + Math.floor(Math.random() * 16777215).toString(16)
+    const colorstr: string = "#" + Math.floor(Math.random() * 16777215).toString(16)
 
-    const embed: any = new EmbedBuilder()
+    const color = colorstr as ColorResolvable
+
+    const embed = new EmbedBuilder()
       .setTitle("About this bot!")
       .setDescription("Apologies, but /info wasn't written yet.")
       .setTimestamp()
@@ -155,8 +158,8 @@ client.on("interactionCreate", async (interaction: any) => {
       return;
     }
     if (new Map(JSON.parse(await keyv.get("userbotmap"))).get(interaction.user.id) === "chatgpt") {
-      let chatgptobject: any = JSON.parse(await keyv.get("chatgptobject"));
-      let chatgptcmap: any = new Map(JSON.parse(await keyv.get("chatgptcmap")));
+      const chatgptobject = JSON.parse(await keyv.get("chatgptobject"));
+      const chatgptcmap = new Map(JSON.parse(await keyv.get("chatgptcmap")));
 
       if (chatgptobject[interaction.user.id].length === 0) {
         interaction.reply({ content: "You have no conversations with ChatGPT! Say something in a bot channel to start one.", ephemeral: true });
@@ -326,9 +329,9 @@ client.on("interactionCreate", async (interaction: any) => {
 
     interaction.reply({ content: "Select an AI to use!", components: [row], ephemeral: true });
   } else if (interaction.commandName === "add-document") {
-    const attachment = interaction.options.getAttachment("file");
+    const attachment = interaction.options.getAttachment("file") ? interaction.options.getAttachment("file") : { contentType: "null", url: "" };
 
-    const attachmentName = interaction.options.getString("file-name");
+    const attachmentName = interaction.options.getString("file-name") ? interaction.options.getString("file-name") : "";
 
     console.log(attachment);
 

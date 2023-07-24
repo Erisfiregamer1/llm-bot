@@ -1,4 +1,4 @@
-import BingAIClient from "npm:@waylaidwanderer/chatgpt-api";
+import { BingAIClient } from "npm:@waylaidwanderer/chatgpt-api";
 
 import Keyv from "npm:keyv";
 
