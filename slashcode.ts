@@ -1,6 +1,6 @@
 import client from "./client.ts";
 
-import { BingImageCreator } from "https://esm.sh/@timefox/bic-sydney";
+import { BingImageCreator } from "https://esm.sh/@timefox/bic-sydney@1.1.4";
 import crypto from "node:crypto";
 
 import { isEnabled as palmIsEnabled } from "./bots/palm.ts";
@@ -22,7 +22,7 @@ import { REST } from "npm:@discordjs/rest";
 import { Routes } from "npm:discord-api-types/v9";
 
 import { ActionRowBuilder, StringSelectMenuBuilder, SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits, ColorResolvable } from "npm:discord.js";
-import { Embed } from "npm:discord.js@dev";
+import { APIActionRowComponent, Embed, MessageActionRowComponentBuilder } from "npm:discord.js@dev";
 
 const commands: any = [];
 
@@ -138,7 +138,7 @@ client.on("interactionCreate", async (interaction) => {
       interaction.reply({ content: "Set your AI to " + interaction.values[0] + "!", ephemeral: true });
     }
   }
-  if (!interaction.isCommand()) return;
+  if (!interaction.isChatInputCommand()) return
   if (interaction.commandName === "info") {
 
     const colorstr: string = "#" + Math.floor(Math.random() * 16777215).toString(16)
@@ -166,7 +166,11 @@ client.on("interactionCreate", async (interaction) => {
         return;
       }
 
-      chatgptobject[interaction.user.id][chatgptcmap.get(interaction.user.id)] = {
+      const index_a = chatgptcmap.get(interaction.user.id)
+
+      const index = index_a as number
+
+      chatgptobject[interaction.user.id][index] = {
         id: "0",
         messages: [
           {
@@ -266,7 +270,7 @@ client.on("interactionCreate", async (interaction) => {
 
     interaction.reply({ content: "Successfully added the channel to the bot!", ephemeral: true });
   } else if (interaction.commandName === "remove-channel") {
-    const channel = interaction.options.getChannel("channel");
+    const channel = interaction.options.getChannel("channel")!;
     if (channel.type !== 0) {
       interaction.reply({ content: "You can only remove text channels!", ephemeral: true });
       return;
@@ -325,11 +329,11 @@ client.on("interactionCreate", async (interaction) => {
 
     const select = new StringSelectMenuBuilder().setCustomId("set-ai").setPlaceholder("Select an AI").addOptions(options);
 
-    const row = new ActionRowBuilder().addComponents(select);
+    const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(select);
 
     interaction.reply({ content: "Select an AI to use!", components: [row], ephemeral: true });
   } else if (interaction.commandName === "add-document") {
-    const attachment = interaction.options.getAttachment("file") ? interaction.options.getAttachment("file") : { contentType: "null", url: "" };
+    const attachment = interaction.options.getAttachment("file") ? interaction.options.getAttachment("file")! : { contentType: "null", url: "" };
 
     const attachmentName = interaction.options.getString("file-name") ? interaction.options.getString("file-name") : "";
 
@@ -347,9 +351,9 @@ client.on("interactionCreate", async (interaction) => {
       try {
         await addDocument(content, attachmentName);
 
-        interaction.editReply({ content: "The document has been uploaded and is now in the bot's information database!", ephemeral: true });
+        interaction.editReply({ content: "The document has been uploaded and is now in the bot's information database!" });
       } catch (_err) {
-        interaction.editReply({ content: "Something went wrong adding the document! The database may be disabled, please check the logs.", ephemeral: true });
+        interaction.editReply({ content: "Something went wrong adding the document! The database may be disabled, please check the logs." });
       }
     } else {
       console.log("Invalid document given, document was of type", attachment.contentType);

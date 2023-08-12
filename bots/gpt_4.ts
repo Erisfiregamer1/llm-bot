@@ -1,4 +1,4 @@
-import { getRelevantDocument } from "../vdb.ts";
+//import { getRelevantDocument } from "../vdb.ts";
 
 //import { VM } from "npm:vm2";
 
@@ -62,7 +62,7 @@ async function handleRes(resObj: any, messages: any, authorid: any) {
     let data = resObj.function_call;
 
     if (data.name === "getInfo") {
-      let res = await getRelevantDocument(JSON.parse(data.arguments).request);
+      let res = "Database temporarily offline" //await getRelevantDocument(JSON.parse(data.arguments).request);
 
       let responseObjData = await send(res, authorid, undefined, undefined, messages);
       let resObjNew = responseObjData.data;
