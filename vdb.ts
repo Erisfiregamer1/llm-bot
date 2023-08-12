@@ -1,6 +1,6 @@
 import { SupabaseVectorStore } from "npm:langchain/vectorstores/supabase";
 import { OpenAIEmbeddings } from "npm:langchain/embeddings/openai";
-import { createClient } from "https://esm.sh/@supabase/supabase-js";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { Document } from "npm:langchain/document";
 
 import { config } from "npm:dotenv";
