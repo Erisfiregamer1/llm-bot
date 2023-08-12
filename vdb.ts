@@ -65,6 +65,7 @@ export const addDocument = async (documentContent: any, documentName: any) => {
 };
 
 export const getRelevantDocument = async (query: any) => {
+  try {
   if (!dbEnabled) {
     return "Database disabled";
   }
@@ -80,4 +81,7 @@ export const getRelevantDocument = async (query: any) => {
   console.log(result);
 
   return result;
+  } catch (err) {
+    return "Something went wrong trying to get information from the database!"
+  }
 };
