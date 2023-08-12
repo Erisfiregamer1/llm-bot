@@ -8,7 +8,7 @@ import { isEnabled as chatgptIsEnabled } from "./bots/chatgpt.ts";
 import { isEnabled as bingIsEnabled } from "./bots/bing_chat.ts";
 import { isEnabled as gpt4IsEnabled } from "./bots/gpt_4.ts";
 
-import { addDocument } from "./vdb.ts";
+// import { addDocument } from "./vdb.ts";
 
 console.log("Loading slash commands...");
 
@@ -349,9 +349,13 @@ client.on("interactionCreate", async (interaction) => {
       console.log(content);
 
       try {
-        await addDocument(content, attachmentName);
+        // await addDocument(content, attachmentName);
 
-        interaction.editReply({ content: "The document has been uploaded and is now in the bot's information database!" });
+        interaction.editReply({ content: "Vector database disabled due to problems with compilation" })
+
+        return
+
+        // interaction.editReply({ content: "The document has been uploaded and is now in the bot's information database!" });
       } catch (_err) {
         interaction.editReply({ content: "Something went wrong adding the document! The database may be disabled, please check the logs." });
       }
