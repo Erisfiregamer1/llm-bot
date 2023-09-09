@@ -21,7 +21,7 @@ const client: Client = new Client({
 client.on(Events.ClientReady, (c) => {
     console.log(`Logged in as ${c.user.tag}!`);
 
-    c.user.setActivity("people use ChatGPT", {
+    c.user.setActivity("people use ChatGPT differently", {
         type: ActivityType.Watching,
     });
 });

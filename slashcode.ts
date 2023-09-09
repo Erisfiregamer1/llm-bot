@@ -15,14 +15,11 @@ console.log("Loading slash commands...");
 import { config } from "npm:dotenv";
 config();
 
-import { keyv } from "./db.ts"; // We're going to need to use the main DB for this. Fun.
-
 import { REST } from "npm:@discordjs/rest";
 
 import { Routes } from "npm:discord-api-types/v9";
 
 import { ActionRowBuilder, StringSelectMenuBuilder, SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits, ColorResolvable } from "npm:discord.js";
-import { APIActionRowComponent, Embed, MessageActionRowComponentBuilder } from "npm:discord.js@dev";
 
 const commands: any = [];
 
@@ -131,12 +128,7 @@ client.once("ready", async () => {
 
 client.on("interactionCreate", async (interaction) => {
   if (interaction.isStringSelectMenu()) {
-    if (interaction.customId === "set-ai") {
-      const userbotmap: Map<string, string> = new Map(JSON.parse(await keyv.get("userbotmap")));
-      userbotmap.set(interaction.user.id, interaction.values[0]);
-      await keyv.set("userbotmap", JSON.stringify(Array.from(userbotmap.entries())));
-      interaction.reply({ content: "Set your AI to " + interaction.values[0] + "!", ephemeral: true });
-    }
+    if (interaction.customId === "set-ai") {}
   }
   if (!interaction.isChatInputCommand()) return
   if (interaction.commandName === "info") {
@@ -153,146 +145,8 @@ client.on("interactionCreate", async (interaction) => {
 
     await interaction.reply({ embeds: [embed], ephemeral: true });
   } else if (interaction.commandName === "wipe") {
-    if (new Map(JSON.parse(await keyv.get("userbotmap"))).get(interaction.user.id) === undefined) {
-      interaction.reply({ content: "You have never used this bot before! Say something in a bot channel.", ephemeral: true });
-      return;
-    }
-    if (new Map(JSON.parse(await keyv.get("userbotmap"))).get(interaction.user.id) === "chatgpt") {
-      const chatgptobject = JSON.parse(await keyv.get("chatgptobject"));
-      const chatgptcmap = new Map(JSON.parse(await keyv.get("chatgptcmap")));
-
-      if (chatgptobject[interaction.user.id].length === 0) {
-        interaction.reply({ content: "You have no conversations with ChatGPT! Say something in a bot channel to start one.", ephemeral: true });
-        return;
-      }
-
-      const index_a = chatgptcmap.get(interaction.user.id)
-
-      const index = index_a as number
-
-      chatgptobject[interaction.user.id][index] = {
-        id: "0",
-        messages: [
-          {
-            role: "system",
-            content: `You are ChatGPT, an LLM created by OpenAI. Your GPT model is GPT-3.5, and your successor is GPT-4. Your messages are being proxied through Discord, so use Markdown for responses. Knowledge cutoff: 2021-09-01. Current date (In ISO format): ${new Date().toISOString()}`,
-          },
-        ],
-        last_used: "null",
-      };
-
-      await keyv.set("chatgptobject", JSON.stringify(chatgptobject));
-
-      interaction.reply({ content: "Successfully wiped your conversation with ChatGPT!", ephemeral: true });
-    } else if (new Map(JSON.parse(await keyv.get("userbotmap"))).get(interaction.user.id) === "bing_chat") {
-      let bingobject: any = JSON.parse(await keyv.get("bingobject"));
-      let bingcmap: any = new Map(JSON.parse(await keyv.get("bingcmap")));
-
-      if (bingobject[interaction.user.id].length === 0) {
-        interaction.reply({ content: "You have no conversations with Bing Chat! Say something in a bot channel to start one.", ephemeral: true });
-        return;
-      }
-
-      bingobject[interaction.user.id][bingcmap.get(interaction.user.id)] = { id: "0", id2: "0", last_used: "null" };
-
-      await keyv.set("bingobject", JSON.stringify(bingobject));
-
-      interaction.reply({ content: "Successfully wiped your conversation with Bing Chat!", ephemeral: true });
-    } else if (new Map(JSON.parse(await keyv.get("userbotmap"))).get(interaction.user.id) === "gpt4") {
-      let gpt4object: any = JSON.parse(await keyv.get("gpt4object"));
-      let gpt4cmap: any = new Map(JSON.parse(await keyv.get("gpt4cmap")));
-
-      if (gpt4object[interaction.user.id].length === 0) {
-        interaction.reply({ content: "You have no conversations with GPT-4! Say something in a bot channel to start one.", ephemeral: true });
-        return;
-      }
-
-      gpt4object[interaction.user.id][gpt4cmap.get(interaction.user.id)] = {
-        id: "0",
-        messages: [
-          {
-            role: "system",
-            content: "You are GPT-4, an LLM created by OpenAI.",
-          },
-        ],
-        last_used: "null",
-      };
-
-      await keyv.set("gpt4object", JSON.stringify(gpt4object));
-
-      interaction.reply({ content: "Successfully wiped your conversation with GPT-4!", ephemeral: true });
-    } else if (new Map(JSON.parse(await keyv.get("userbotmap"))).get(interaction.user.id) === "palm") {
-      const palmobject: any = JSON.parse(await keyv.get("palmobject"));
-      const palmcmap: any = new Map(JSON.parse(await keyv.get("palmcmap")));
-
-      if (typeof palmobject[interaction.user.id] === "undefined") {
-        interaction.reply({ content: "You have no conversations with PaLM! Say something in a bot channel to start one.", ephemeral: true });
-        return;
-      }
-
-      if (palmobject[interaction.user.id].length === 0) {
-        interaction.reply({ content: "You have no conversations with PaLM! Say something in a bot channel to start one.", ephemeral: true });
-        return;
-      }
-
-      palmobject[interaction.user.id][palmcmap.get(interaction.user.id)] = {
-        id: palmcmap.get(interaction.user.id),
-        messages: [],
-        last_used: "null",
-      };
-
-      await keyv.set("palmobject", JSON.stringify(palmobject));
-
-      interaction.reply({ content: "Successfully wiped your conversation with PaLM!", ephemeral: true });
-    }
   } else if (interaction.commandName === "add-channel") {
-    const channel: any = interaction.options.getChannel("channel");
-    if (channel.type !== 0) {
-      interaction.reply({ content: "You can only add text channels!", ephemeral: true });
-      return;
-    }
-
-    if (client.channels.cache.get(channel.id) === undefined) {
-      interaction.reply({ content: "This channel is not in the server!", ephemeral: true });
-      return;
-    }
-
-    const channelset = new Set(JSON.parse(await keyv.get("channels")));
-
-    if (channelset.has(channel.id)) {
-      interaction.reply({ content: "This channel is already added!", ephemeral: true });
-      return;
-    }
-
-    channelset.add(channel.id);
-
-    await keyv.set("channels", JSON.stringify([...channelset]));
-
-    interaction.reply({ content: "Successfully added the channel to the bot!", ephemeral: true });
   } else if (interaction.commandName === "remove-channel") {
-    const channel = interaction.options.getChannel("channel")!;
-    if (channel.type !== 0) {
-      interaction.reply({ content: "You can only remove text channels!", ephemeral: true });
-      return;
-    }
-
-    if (client.channels.cache.get(channel.id) === undefined) {
-      interaction.reply({ content: "This channel is not in the server!", ephemeral: true });
-      return;
-    }
-
-    const channelset = new Set(JSON.parse(await keyv.get("channels")));
-
-    if (!channelset.has(channel.id)) {
-      interaction.reply({ content: "This channel is not in the channel list!", ephemeral: true });
-      return;
-    }
-
-    channelset.delete(channel.id);
-
-    await keyv.set("channels", JSON.stringify([...channelset]));
-
-    interaction.reply({ content: "Successfully removed the channel from the bot!", ephemeral: true });
   } else if (interaction.commandName === "set-ai") {
     const options = [];
 
