@@ -33,7 +33,7 @@ export async function send(messages: ChatCompletionResponseMessage[], prompt: st
   })
 
   const res = await fetch("https://api.openai.com/v1/chat/completions", {
-    // INTENTIONAL ERROR HERE FOR DENO ERROR REPRODUCTION. THIS LINE SHOULD BE HERE: "method: "POST","
+    method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${Deno.env.get("OPENAI_API_KEY")}`

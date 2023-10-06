@@ -22,6 +22,7 @@ const db = await Deno.openKv("./db.sqlite")
 New database example:
 
 {
+  channels: [1],
   users: {
     0: {
       current_bot: "chatgpt",
