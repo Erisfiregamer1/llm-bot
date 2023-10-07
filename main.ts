@@ -68,6 +68,10 @@ client.on("messageCreate", async (message) => {
         // They haven't used this LLM before 
         curconv = 0
         await db.set(["users", message.author.id, "current_conversation"], curconv)
+
+        if (error === false) {
+          await message.reply("Started conversation! Use /wipe to reset this conversation.")
+        }
       }
 
       let messages = (await db.get<messagedata[]>(["users", message.author.id, "conversations", llm])).value
@@ -78,7 +82,11 @@ client.on("messageCreate", async (message) => {
           id: "New Conversation",
           messages: []
         }]
-          await db.set(["users", message.author.id, "conversations", llm], messages)
+        await db.set(["users", message.author.id, "conversations", llm], messages)
+
+        if (error === false) {
+          await message.reply("Started conversation! Use /wipe to reset this conversation.")
+        }
       }
 
       const curmsgs = messages[curconv].messages

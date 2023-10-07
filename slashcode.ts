@@ -8,7 +8,7 @@ import { isEnabled as chatgptIsEnabled } from "./bots/chatgpt.ts";
 import { isEnabled as bingIsEnabled } from "./bots/bing_chat.ts";
 import { isEnabled as gpt4IsEnabled } from "./bots/gpt_4.ts";
 
-// import { addDocument } from "./vdb.ts";
+import { addDocument } from "./vdb.ts";
 
 console.log("Loading slash commands...");
 
@@ -21,7 +21,7 @@ import { Routes } from "npm:discord-api-types/v9";
 
 import { ActionRowBuilder, StringSelectMenuBuilder, SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits, ColorResolvable } from "npm:discord.js";
 
-const commands: any = [];
+const commands: SlashCommandBuilder[] = [];
 
 const command1 = new SlashCommandBuilder();
 command1.setName("info");
@@ -128,7 +128,9 @@ client.once("ready", async () => {
 
 client.on("interactionCreate", async (interaction) => {
   if (interaction.isStringSelectMenu()) {
-    if (interaction.customId === "set-ai") {}
+    if (interaction.customId === "set-ai") {
+      await interaction.reply({ content: "Command not implemented", ephemeral: true });
+    }
   }
   if (!interaction.isChatInputCommand()) return
   if (interaction.commandName === "info") {
@@ -145,8 +147,13 @@ client.on("interactionCreate", async (interaction) => {
 
     await interaction.reply({ embeds: [embed], ephemeral: true });
   } else if (interaction.commandName === "wipe") {
+    await interaction.reply({ content: "Command not implemented", ephemeral: true });
   } else if (interaction.commandName === "add-channel") {
+    await interaction.reply({ content: "Command not implemented", ephemeral: true });
+
   } else if (interaction.commandName === "remove-channel") {
+    await interaction.reply({ content: "Command not implemented", ephemeral: true });
+
   } else if (interaction.commandName === "set-ai") {
     const options = [];
 
@@ -168,13 +175,26 @@ client.on("interactionCreate", async (interaction) => {
       description: "Better version of ChatGPT. Powers Bing Chat. Has no internet.",
     };
 
-    const palmodel: any = Deno.env.get("PALM_MODEL")
+    const palmodel = Deno.env.get("PALM_MODEL")
 
-    const palm = {
+let palm
+
+    if (palmodel === 
+      "string") {
+
+    palm = {
       label: `PaLM (${palmodel.replace("models/", "")})`,
       value: "palm",
       description: `Google's AI model. The specific model is ${palmodel.replace("models/", "")}.`,
     };
+
+  } else {
+    palm = {
+      label: `PaLM (DISABLED)`,
+      value: "palm",
+      description: `You shouldn't be seeing this. (Palm's model isn't configured)`,
+    };
+  }
 
     if (chatgptIsEnabled) options.push(chatgpt);
     if (bingIsEnabled) options.push(bing_chat);
@@ -203,13 +223,9 @@ client.on("interactionCreate", async (interaction) => {
       console.log(content);
 
       try {
-        // await addDocument(content, attachmentName);
+        await addDocument(content, attachmentName);
 
-        interaction.editReply({ content: "Vector database disabled due to problems with compilation" })
-
-        return
-
-        // interaction.editReply({ content: "The document has been uploaded and is now in the bot's information database!" });
+        interaction.editReply({ content: "The document has been uploaded and is now in the bot's information database!" });
       } catch (_err) {
         interaction.editReply({ content: "Something went wrong adding the document! The database may be disabled, please check the logs." });
       }
@@ -234,7 +250,7 @@ client.on("interactionCreate", async (interaction) => {
 
     let resp = `Here's your image${imageData.length === 1 ? "!" : "s!"} The prompt you gave me was "${prompt}":\n`;
 
-    imageData.forEach((url: any) => {
+    imageData.forEach((url: string) => {
       resp = resp.concat(`${url}\n`);
     });
 
