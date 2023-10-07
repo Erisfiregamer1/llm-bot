@@ -96,7 +96,7 @@ command15.addAttachmentOption((option) => option.setName("file").setDescription(
 const command16 = new SlashCommandBuilder();
 command16.setName("create-image-bingchat");
 command16.setDescription("Create an image using DALL-E 3! (Powered by Bing Chat Image Maker)");
-command16.addStringOption((option) => option.setName("prompt").setDescription("Prompt to be sent to DALL-E E").setRequired(true));
+command16.addStringOption((option) => option.setName("prompt").setDescription("Prompt to be sent to DALL-E 3").setRequired(true));
 
 const botamt = 16;
 for (let i = 1; i - 1 < botamt; i++) {

@@ -54,7 +54,7 @@ client.on("messageCreate", async (message) => {
         await db.set(["users", message.author.id, "current_bot"], llm)
         await message.reply("Looks like this is your first time using this bot! Run /info to learn how to use the full potential of this bot.")
         error = true
-      } else if (!llm.match(/^(chatgpt|bing|bard|gpt4)$/g)) {
+      } else if (!llm.match(/^(chatgpt|bing|bard|gpt4|llama2)$/g)) {
         // current LLM is corrupt. notify user and reset
         llm = "chatgpt"
         await db.set(["users", message.author.id, "current_bot"], llm)
