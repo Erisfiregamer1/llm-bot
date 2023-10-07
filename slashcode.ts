@@ -209,7 +209,11 @@ let palm
   } else if (interaction.commandName === "add-document") {
     const attachment = interaction.options.getAttachment("file") ? interaction.options.getAttachment("file")! : { contentType: "null", url: "" };
 
-    const attachmentName = interaction.options.getString("file-name") ? interaction.options.getString("file-name") : "";
+    let attachmentName = interaction.options.getString("file-name")
+
+    if (attachmentName === null) {
+      attachmentName = ""
+    }
 
     console.log(attachment);
 
