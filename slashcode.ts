@@ -8,9 +8,9 @@ import { isEnabled as chatgptIsEnabled } from "./bots/chatgpt.ts";
 import { isEnabled as bingIsEnabled } from "./bots/bing_chat.ts";
 import { isEnabled as gpt4IsEnabled } from "./bots/gpt_4.ts";
 
-import { addDocument } from "./vdb.ts";
-
 console.log("Loading slash commands...");
+
+// import { addDocument } from "./vdb.ts";
 
 import { config } from "npm:dotenv";
 config();
@@ -95,7 +95,7 @@ command15.addAttachmentOption((option) => option.setName("file").setDescription(
 
 const command16 = new SlashCommandBuilder();
 command16.setName("create-image-bingchat");
-command16.setDescription("Create an image using DALL-E 2! (Powered by Bing Chat Image Maker)");
+command16.setDescription("Create an image using DALL-E 3! (Powered by Bing Chat Image Maker)");
 command16.addStringOption((option) => option.setName("prompt").setDescription("Prompt to be sent to DALL-E 2").setRequired(true));
 
 const botamt = 16;
@@ -110,7 +110,7 @@ const token: string = Deno.env.get("DISCORD_TOKEN")!
 const rest = new REST({ version: "10" }).setToken(token);
 
 // Send slash commands to Discord, create event handler.
-client.once("ready", async () => {
+client.on("ready", async () => {
   try {
     console.log("Started refreshing application (/) commands.");
 
@@ -227,9 +227,11 @@ let palm
       console.log(content);
 
       try {
-        await addDocument(content, attachmentName);
+        // await addDocument(content, attachmentName);
 
-        interaction.editReply({ content: "The document has been uploaded and is now in the bot's information database!" });
+        // interaction.editReply({ content: "The document has been uploaded and is now in the bot's information database" });
+
+         interaction.editReply({ content: "Vector database disabled!" });
       } catch (_err) {
         interaction.editReply({ content: "Something went wrong adding the document! The database may be disabled, please check the logs." });
       }

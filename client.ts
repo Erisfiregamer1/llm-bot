@@ -1,5 +1,5 @@
 // Here we go again.
-import { Client, Events, ActivityType, GatewayIntentBits, Partials } from "npm:discord.js@dev";
+import { Client, ActivityType, GatewayIntentBits, Partials } from "npm:discord.js@dev";
 
 import { config } from "npm:dotenv";
 
@@ -18,12 +18,12 @@ const client: Client = new Client({
   ],
 });
 
-client.on(Events.ClientReady, (c) => {
-    console.log(`Logged in as ${c.user.tag}!`);
+client.on("ready", (c) => {
+  console.log(`Logged in as ${c.user.tag}!`);
 
-    c.user.setActivity("people use ChatGPT differently", {
-        type: ActivityType.Watching,
-    });
+  c.user.setActivity("people use ChatGPT differently", {
+      type: ActivityType.Watching,
+  });
 });
 
 await client.login(Deno.env.get("DISCORD_TOKEN"))

@@ -10,9 +10,9 @@ type messagedata = {
   messages: ChatCompletionResponseMessage[]
 }
 
-import client from "./client.ts"
+import "./slashcode.ts"
 
-// import "./slashcode.ts"
+import client from "./client.ts"
 
 import { ChannelType } from "npm:discord.js";
 
@@ -98,5 +98,3 @@ client.on("messageCreate", async (message) => {
       msg.edit(resp.oaires.choices[0].message?.content!)
     }
   });
-  
-  console.log("The bot is now online!");
