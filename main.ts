@@ -143,7 +143,7 @@ client.on("messageCreate", async (message) => {
       }
     }
 
-    let curmsgs = messages[curconv].messages;
+    const curmsgs = messages[curconv].messages;
 
     const msg = await message.reply("Sending message...");
 
