@@ -24,7 +24,9 @@ type response = {
   messages: OpenAI.Chat.ChatCompletionMessage[];
 };
 
-function isError(value: any): value is ChatCompletionError {
+function isError(
+  value: ChatCompletionError | OpenAI.Chat.Completions.ChatCompletion,
+): value is ChatCompletionError {
   return "error" in value;
 }
 

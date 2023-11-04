@@ -62,7 +62,10 @@ New database example:
 
 client.on("messageCreate", async (message) => {
   if (message.author.bot || JSON.stringify(message.flags) === "4096") return; // The "4096" flag is the @silent flag on discord.
-  if (message.channel.type === ChannelType.DM || message.channel.id === "1083904151479652392") {
+  if (
+    message.channel.type === ChannelType.DM ||
+    message.channel.id === "1083904151479652392"
+  ) {
     let error = false; // Tracks if we've already pestered the user with an error / message :\
 
     let llm =
@@ -136,12 +139,13 @@ client.on("messageCreate", async (message) => {
 
     const msg = await message.reply("Sending message...");
 
-    let resp: gptresponse
+    let resp: gptresponse;
 
     if (llm === "chatgpt") {
       if (!chatgpt.isEnabled) {
-        msg.edit("This LLM isn't enabled! Please switch to a different LLM to use this bot.",);
-
+        msg.edit(
+          "This LLM isn't enabled! Please switch to a different LLM to use this bot.",
+        );
         return;
       }
 
@@ -151,42 +155,35 @@ client.on("messageCreate", async (message) => {
           message.content,
           message.author.id,
         );
+
+        const messagechunks = splitStringIntoChunks(
+          resp.oaires.choices[0].message?.content!,
+          2000,
+        );
+
+        let i = 0;
+
+        messagechunks.forEach(async (chunk) => {
+          if (i === 0) {
+            await msg.edit(chunk);
+            i = 1;
+          } else {
+            await message.reply(chunk);
+          }
+        });
       } catch (err) {
-        if (err === "not_enabled") {
-          msg.edit("Congragulations! You've somehow bypassed the `This LLM is enabled` check! (Yes this LLM is offline. Oopsy daisy)",);
-
-          return
-        }
-
-        msg.edit("Something went catastrophically wrong! Please tell the bot host to check the logs, thaaaaanks",);
-        console.error("hey dumbass this error got thrown, go check that thanks:", err);
-
+        msg.edit(
+          "Something went catastrophically wrong! Please tell the bot host to check the logs, thaaaaanks",
+        );
+        console.error(
+          "hey dumbass this error got thrown, go check that thanks:",
+          err,
+        );
         return;
       }
     } else {
-      msg.edit("Somehow, you managed to send a message without us having a handler for that LLM. Congratulations- now go harrass the bot owner to tell the dev about this.");
-      console.error("hey, please send this to the devs thx!!!", llm);
-
+      msg.edit("No handler for this LLM! Switch to a different one.");
       return;
-    }
-
-    if (llm === "chatgpt" || llm === "gpt4") {
-
-      const messagechunks = splitStringIntoChunks(resp.oaires.choices[0].message?.content!, 2000)
-    
-      let i = 0
-
-      messagechunks.forEach(async (chunk) => {
-        if (i === 0) {
-
-          console.log("a")
-
-          await msg.edit(chunk)
-          i = 1
-        } else {
-          await message.reply(chunk)
-        }
-      }) 
     }
   }
 });
