@@ -23,7 +23,15 @@ import { ChannelType } from "npm:discord.js";
 
 const db = await Deno.openKv("./db.sqlite");
 
-function splitStringIntoChunks(inputString: string, chunkSize: number) {
+function splitStringIntoChunks(inputString: string | null, chunkSize: number) {
+  if (inputString === null) {
+    // i'm going insane
+
+    return [
+      "oopsie daisy! we did a fucky wucky and gave a critical component null again >~<",
+    ];
+  }
+
   const length = inputString.length;
   const chunks = [];
 
@@ -156,8 +164,10 @@ client.on("messageCreate", async (message) => {
           message.author.id,
         );
 
+        curmsgs.push(resp.oaires.choices[0].message);
+
         const messagechunks = splitStringIntoChunks(
-          resp.oaires.choices[0].message?.content!,
+          resp.oaires.choices[0].message.content,
           2000,
         );
 
