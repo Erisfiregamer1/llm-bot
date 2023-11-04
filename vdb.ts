@@ -1,6 +1,9 @@
 import { SupabaseVectorStore } from "npm:langchain/vectorstores/supabase";
 import { OpenAIEmbeddings } from "npm:langchain/embeddings/openai";
-import { SupabaseClient, createClient } from "https://esm.sh/@supabase/supabase-js@2.26.0";
+import {
+  createClient,
+  SupabaseClient,
+} from "https://esm.sh/@supabase/supabase-js@2.26.0";
 import { Document } from "npm:langchain/document";
 
 import { config } from "npm:dotenv";
@@ -10,16 +13,20 @@ let dbEnabled = true;
 
 const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 const url = Deno.env.get("SUPABASE_URL");
-const apiKey = Deno.env.get("OPENAI_API_KEY")
+const apiKey = Deno.env.get("OPENAI_API_KEY");
 
 let client: SupabaseClient;
 let vectorStore: SupabaseVectorStore;
 
-if (supabaseKey !== "string") {
-  console.log(`SUPABASE_SERVICE_ROLE_KEY is not defined in your .env, the database will be disabled.`);
+if (typeof supabaseKey !== "string") {
+  console.log(
+    `SUPABASE_SERVICE_ROLE_KEY is not defined in your .env, the database will be disabled.`,
+  );
   dbEnabled = false;
-} else if (!url) {
-  console.log(`SUPABASE_URL is not defined in your .env, the database will be disabled.`);
+} else if (typeof url !== "string") {
+  console.log(
+    `SUPABASE_URL is not defined in your .env, the database will be disabled.`,
+  );
   dbEnabled = false;
 } else {
   try {
@@ -35,15 +42,20 @@ if (supabaseKey !== "string") {
         client,
         tableName: "documents",
         queryName: "match_documents",
-      }
+      },
     );
   } catch (_err) {
-    console.warn("Something went wrong starting the database, are you sure the API key and Supabase URL are right? The database has been disabled.");
+    console.warn(
+      "Something went wrong starting the database, are you sure the API key and Supabase URL are right? The database has been disabled.",
+    );
     dbEnabled = false;
   }
 }
 
-export const addDocument = async (documentContent: string, documentName: string) => {
+export const addDocument = async (
+  documentContent: string,
+  documentName: string,
+) => {
   if (!dbEnabled) {
     throw "Database disabled";
   }
@@ -66,22 +78,25 @@ export const addDocument = async (documentContent: string, documentName: string)
 
 export const getRelevantDocument = async (query: string) => {
   try {
-  if (!dbEnabled) {
-    return "Database disabled";
-  }
+    if (!dbEnabled) {
+      return "Database disabled";
+    }
 
-  let result: Document[] | string = await vectorStore.similaritySearch(query, 1);
+    let result: Document[] | string = await vectorStore.similaritySearch(
+      query,
+      1,
+    );
 
-  if (JSON.stringify(result) === JSON.stringify([])) {
-    result = "No result found";
-  } else {
-    result = result[0].pageContent;
-  }
+    if (JSON.stringify(result) === JSON.stringify([])) {
+      result = "No result found";
+    } else {
+      result = result[0].pageContent;
+    }
 
-  console.log(result);
+    console.log(result);
 
-  return result;
+    return result;
   } catch (_err) {
-    return "Something went wrong trying to get information from the database!"
+    return "Something went wrong trying to get information from the database!";
   }
 };

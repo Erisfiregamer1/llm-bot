@@ -19,7 +19,14 @@ import { REST } from "npm:@discordjs/rest";
 
 import { Routes } from "npm:discord-api-types/v9";
 
-import { ActionRowBuilder, StringSelectMenuBuilder, SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits, ColorResolvable } from "npm:discord.js";
+import {
+  ActionRowBuilder,
+  ColorResolvable,
+  EmbedBuilder,
+  PermissionFlagsBits,
+  SlashCommandBuilder,
+  StringSelectMenuBuilder,
+} from "npm:discord.js";
 
 const commands: SlashCommandBuilder[] = [];
 
@@ -29,29 +36,51 @@ command1.setDescription("Gives some information about this bot! :)");
 
 const command2 = new SlashCommandBuilder();
 command2.setName("wipe");
-command2.setDescription("Resets your conversation with your current AI, letting you start over.");
+command2.setDescription(
+  "Resets your conversation with your current AI, letting you start over.",
+);
 
 const command3 = new SlashCommandBuilder();
 command3.setName("add-channel");
 command3.setDescription("For server management! Make the bot use a channel.");
 command3.setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels);
-command3.addChannelOption((option) => option.setName("channel").setDescription("Channel to add to bot").setRequired(true));
+command3.addChannelOption((option) =>
+  option.setName("channel").setDescription("Channel to add to bot").setRequired(
+    true,
+  )
+);
 
 const command4 = new SlashCommandBuilder();
 command4.setName("remove-channel");
-command4.setDescription("For server management! Removes the bot from a channel.");
+command4.setDescription(
+  "For server management! Removes the bot from a channel.",
+);
 command4.setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels);
-command4.addChannelOption((option) => option.setName("channel").setDescription("Channel to remove from bot").setRequired(true));
+command4.addChannelOption((option) =>
+  option.setName("channel").setDescription("Channel to remove from bot")
+    .setRequired(true)
+);
 
 const command5 = new SlashCommandBuilder();
 command5.setName("ban");
-command5.setDescription("Bans a user from being able to use the bot! THIS IS FOR THE BOT DEVELOPER!!!");
-command5.addStringOption((option) => option.setName("id").setDescription("UserID to send to brazil").setRequired(true));
+command5.setDescription(
+  "Bans a user from being able to use the bot! THIS IS FOR THE BOT DEVELOPER!!!",
+);
+command5.addStringOption((option) =>
+  option.setName("id").setDescription("UserID to send to brazil").setRequired(
+    true,
+  )
+);
 
 const command6 = new SlashCommandBuilder();
 command6.setName("unban");
-command6.setDescription("Unbans a user from the bot! THIS IS FOR THE BOT DEVELOPER!!!");
-command6.addStringOption((option) => option.setName("id").setDescription("UserID to remove from brazil").setRequired(true));
+command6.setDescription(
+  "Unbans a user from the bot! THIS IS FOR THE BOT DEVELOPER!!!",
+);
+command6.addStringOption((option) =>
+  option.setName("id").setDescription("UserID to remove from brazil")
+    .setRequired(true)
+);
 
 const command7 = new SlashCommandBuilder();
 command7.setName("remove-conversation");
@@ -75,8 +104,14 @@ command11.setDescription("Switch between the options for using this bot.");
 
 const command12 = new SlashCommandBuilder();
 command12.setName("create-image");
-command12.setDescription("Create a 1024x1024 image using Stable Diffusion! (Powered by Salad.com)");
-command12.addStringOption((option) => option.setName("prompt").setDescription("Prompt to be sent to Stable Diffusion").setRequired(true));
+command12.setDescription(
+  "Create a 1024x1024 image using Stable Diffusion! (Powered by Salad.com)",
+);
+command12.addStringOption((option) =>
+  option.setName("prompt").setDescription(
+    "Prompt to be sent to Stable Diffusion",
+  ).setRequired(true)
+);
 
 const command13 = new SlashCommandBuilder();
 command13.setName("get-image");
@@ -88,15 +123,29 @@ command14.setDescription("Switch between the 4 modes for Sydney.");
 
 const command15 = new SlashCommandBuilder();
 command15.setName("add-document");
-command15.setDescription("Add a document to this bot's information database (Powered by Supabase).");
+command15.setDescription(
+  "Add a document to this bot's information database (Powered by Supabase).",
+);
 command15.setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels);
-command15.addStringOption((option) => option.setName("file-name").setDescription("The name of the file for the vector database.").setRequired(true));
-command15.addAttachmentOption((option) => option.setName("file").setDescription("The file to be added to the database.").setRequired(true));
+command15.addStringOption((option) =>
+  option.setName("file-name").setDescription(
+    "The name of the file for the vector database.",
+  ).setRequired(true)
+);
+command15.addAttachmentOption((option) =>
+  option.setName("file").setDescription("The file to be added to the database.")
+    .setRequired(true)
+);
 
 const command16 = new SlashCommandBuilder();
 command16.setName("create-image-bingchat");
-command16.setDescription("Create an image using DALL-E 3! (Powered by Bing Chat Image Maker)");
-command16.addStringOption((option) => option.setName("prompt").setDescription("Prompt to be sent to DALL-E 3").setRequired(true));
+command16.setDescription(
+  "Create an image using DALL-E 3! (Powered by Bing Chat Image Maker)",
+);
+command16.addStringOption((option) =>
+  option.setName("prompt").setDescription("Prompt to be sent to DALL-E 3")
+    .setRequired(true)
+);
 
 const botamt = 16;
 for (let i = 1; i - 1 < botamt; i++) {
@@ -104,8 +153,8 @@ for (let i = 1; i - 1 < botamt; i++) {
   commands.push(eval(commandname));
 }
 
-const appid: string = Deno.env.get("APP_ID")!
-const token: string = Deno.env.get("DISCORD_TOKEN")!
+const appid: string = Deno.env.get("APP_ID")!;
+const token: string = Deno.env.get("DISCORD_TOKEN")!;
 
 const rest = new REST({ version: "10" }).setToken(token);
 
@@ -129,15 +178,18 @@ client.on("ready", async () => {
 client.on("interactionCreate", async (interaction) => {
   if (interaction.isStringSelectMenu()) {
     if (interaction.customId === "set-ai") {
-      await interaction.reply({ content: "Command not implemented", ephemeral: true });
+      await interaction.reply({
+        content: "Command not implemented",
+        ephemeral: true,
+      });
     }
   }
-  if (!interaction.isChatInputCommand()) return
+  if (!interaction.isChatInputCommand()) return;
   if (interaction.commandName === "info") {
+    const colorstr: string = "#" +
+      Math.floor(Math.random() * 16777215).toString(16);
 
-    const colorstr: string = "#" + Math.floor(Math.random() * 16777215).toString(16)
-
-    const color = colorstr as ColorResolvable
+    const color = colorstr as ColorResolvable;
 
     const embed = new EmbedBuilder()
       .setTitle("About this bot!")
@@ -147,13 +199,20 @@ client.on("interactionCreate", async (interaction) => {
 
     await interaction.reply({ embeds: [embed], ephemeral: true });
   } else if (interaction.commandName === "wipe") {
-    await interaction.reply({ content: "Command not implemented", ephemeral: true });
+    await interaction.reply({
+      content: "Command not implemented",
+      ephemeral: true,
+    });
   } else if (interaction.commandName === "add-channel") {
-    await interaction.reply({ content: "Command not implemented", ephemeral: true });
-
+    await interaction.reply({
+      content: "Command not implemented",
+      ephemeral: true,
+    });
   } else if (interaction.commandName === "remove-channel") {
-    await interaction.reply({ content: "Command not implemented", ephemeral: true });
-
+    await interaction.reply({
+      content: "Command not implemented",
+      ephemeral: true,
+    });
   } else if (interaction.commandName === "set-ai") {
     const options = [];
 
@@ -172,47 +231,60 @@ client.on("interactionCreate", async (interaction) => {
     const gpt4 = {
       label: "GPT-4",
       value: "gpt4",
-      description: "Better version of ChatGPT. Powers Bing Chat. Has no internet.",
+      description:
+        "Better version of ChatGPT. Powers Bing Chat. Has no internet.",
     };
 
-    const palmodel = Deno.env.get("PALM_MODEL")
+    const palmodel = Deno.env.get("PALM_MODEL");
 
-let palm
+    let palm;
 
-    if (palmodel === 
-      "string") {
-
-    palm = {
-      label: `PaLM (${palmodel.replace("models/", "")})`,
-      value: "palm",
-      description: `Google's AI model. The specific model is ${palmodel.replace("models/", "")}.`,
-    };
-
-  } else {
-    palm = {
-      label: `PaLM (DISABLED)`,
-      value: "palm",
-      description: `You shouldn't be seeing this. (Palm's model isn't configured)`,
-    };
-  }
+    if (
+      palmodel ===
+        "string"
+    ) {
+      palm = {
+        label: `PaLM (${palmodel.replace("models/", "")})`,
+        value: "palm",
+        description: `Google's AI model. The specific model is ${
+          palmodel.replace("models/", "")
+        }.`,
+      };
+    } else {
+      palm = {
+        label: `PaLM (DISABLED)`,
+        value: "palm",
+        description:
+          `You shouldn't be seeing this. (Palm's model isn't configured)`,
+      };
+    }
 
     if (chatgptIsEnabled) options.push(chatgpt);
     if (bingIsEnabled) options.push(bing_chat);
     if (gpt4IsEnabled) options.push(gpt4);
     if (palmIsEnabled) options.push(palm);
 
-    const select = new StringSelectMenuBuilder().setCustomId("set-ai").setPlaceholder("Select an AI").addOptions(options);
+    const select = new StringSelectMenuBuilder().setCustomId("set-ai")
+      .setPlaceholder("Select an AI").addOptions(options);
 
-    const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(select);
+    const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
+      select,
+    );
 
-    interaction.reply({ content: "Select an AI to use!", components: [row], ephemeral: true });
+    interaction.reply({
+      content: "Select an AI to use!",
+      components: [row],
+      ephemeral: true,
+    });
   } else if (interaction.commandName === "add-document") {
-    const attachment = interaction.options.getAttachment("file") ? interaction.options.getAttachment("file")! : { contentType: "null", url: "" };
+    const attachment = interaction.options.getAttachment("file")
+      ? interaction.options.getAttachment("file")!
+      : { contentType: "null", url: "" };
 
-    let attachmentName = interaction.options.getString("file-name")
+    let attachmentName = interaction.options.getString("file-name");
 
     if (attachmentName === null) {
-      attachmentName = ""
+      attachmentName = "";
     }
 
     console.log(attachment);
@@ -231,13 +303,23 @@ let palm
 
         // interaction.editReply({ content: "The document has been uploaded and is now in the bot's information database" });
 
-         interaction.editReply({ content: "Vector database disabled!" });
+        interaction.editReply({ content: "Vector database disabled!" });
       } catch (_err) {
-        interaction.editReply({ content: "Something went wrong adding the document! The database may be disabled, please check the logs." });
+        interaction.editReply({
+          content:
+            "Something went wrong adding the document! The database may be disabled, please check the logs.",
+        });
       }
     } else {
-      console.log("Invalid document given, document was of type", attachment.contentType);
-      interaction.reply({ content: `The given document is not a text file! Please send a .txt file to be uploaded. All we know is that you gave us this type of file: "${attachment.contentType}`, ephemeral: true });
+      console.log(
+        "Invalid document given, document was of type",
+        attachment.contentType,
+      );
+      interaction.reply({
+        content:
+          `The given document is not a text file! Please send a .txt file to be uploaded. All we know is that you gave us this type of file: "${attachment.contentType}`,
+        ephemeral: true,
+      });
     }
   } else if (interaction.commandName === "create-image-bingchat") {
     await interaction.deferReply({ ephemeral: true });
@@ -247,23 +329,25 @@ let palm
     const id = crypto.randomUUID();
 
     try {
+      const imageCreator = new BingImageCreator({
+        userToken: Deno.env.get("BING_COOKIE"),
+      });
 
-    const imageCreator = new BingImageCreator({
-      userToken: Deno.env.get("BING_COOKIE"),
-    });
+      const imageData = await imageCreator.genImageList(prompt, id, true);
 
-    const imageData = await imageCreator.genImageList(prompt, id, true);
+      let resp = `Here's your image${
+        imageData.length === 1 ? "!" : "s!"
+      } The prompt you gave me was "${prompt}":\n`;
 
-    let resp = `Here's your image${imageData.length === 1 ? "!" : "s!"} The prompt you gave me was "${prompt}":\n`;
+      imageData.forEach((url: string) => {
+        resp = resp.concat(`${url}\n`);
+      });
 
-    imageData.forEach((url: string) => {
-      resp = resp.concat(`${url}\n`);
-    });
-
-    interaction.editReply(resp);
-
-  } catch (err) {
-    interaction.editReply(`Something went wrong making the images! All I know is the error was "${err}".`);
-  }
+      interaction.editReply(resp);
+    } catch (err) {
+      interaction.editReply(
+        `Something went wrong making the images! All I know is the error was "${err}".`,
+      );
+    }
   }
 });
