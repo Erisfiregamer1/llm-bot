@@ -164,7 +164,7 @@ client.on("messageCreate", async (message) => {
           message.author.id,
         );
 
-        messages[curconv].messages = resp.messages
+        messages[curconv].messages = resp.messages;
 
         await db.set(
           ["users", message.author.id, "conversations", llm],

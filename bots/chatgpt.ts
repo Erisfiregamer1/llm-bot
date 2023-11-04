@@ -71,13 +71,12 @@ export async function send(
   const resp: OpenAI.Chat.Completions.ChatCompletion | ChatCompletionError =
     await res.json();
 
-
   if (isError(resp)) {
     // Fuck.
     throw resp.error.message; // well at least they know why the fuck it crashed??
   }
 
-  messages.push(resp.choices[0].message)
+  messages.push(resp.choices[0].message);
 
   return {
     oaires: resp,
