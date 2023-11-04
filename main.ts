@@ -164,7 +164,12 @@ client.on("messageCreate", async (message) => {
           message.author.id,
         );
 
-        curmsgs = resp.messages
+        messages[curconv].messages = resp.messages
+
+        await db.set(
+          ["users", message.author.id, "conversations", llm],
+          messages,
+        );
 
         const messagechunks = splitStringIntoChunks(
           resp.oaires.choices[0].message.content,
