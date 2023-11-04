@@ -143,7 +143,7 @@ client.on("messageCreate", async (message) => {
       }
     }
 
-    const curmsgs = messages[curconv].messages;
+    let curmsgs = messages[curconv].messages;
 
     const msg = await message.reply("Sending message...");
 
@@ -164,7 +164,7 @@ client.on("messageCreate", async (message) => {
           message.author.id,
         );
 
-        curmsgs.push(resp.oaires.choices[0].message);
+        curmsgs = resp.messages
 
         const messagechunks = splitStringIntoChunks(
           resp.oaires.choices[0].message.content,
