@@ -10,6 +10,13 @@ import { isEnabled as gpt4IsEnabled } from "./bots/gpt_4.ts";
 
 console.log("Loading slash commands...");
 
+import OpenAI from "npm:openai";
+
+type messagedata = {
+  id: string;
+  messages: OpenAI.Chat.ChatCompletionMessage[];
+};
+
 // import { addDocument } from "./vdb.ts";
 
 import { config } from "npm:dotenv";
@@ -29,6 +36,8 @@ import {
 } from "npm:discord.js";
 
 const commands: SlashCommandBuilder[] = [];
+
+const db = await Deno.openKv("./db.sqlite");
 
 const command1 = new SlashCommandBuilder();
 command1.setName("info");
@@ -199,8 +208,51 @@ client.on("interactionCreate", async (interaction) => {
 
     await interaction.reply({ embeds: [embed], ephemeral: true });
   } else if (interaction.commandName === "wipe") {
+
+    const llm =
+      (await db.get<string>(["users", interaction.user.id, "current_bot"])).value; // After reading the typedocs I realized this is the cleaner way to do this
+    const curconv = (await db.get<number>([
+      "users",
+      interaction.user.id,
+      "current_conversation",
+    ])).value;
+
+    if (llm === null || curconv === null) {
+      await interaction.reply({
+        content: "Send a message before wiping your conversation!",
+        ephemeral: true,
+      });
+      return
+    }
+
+    const messages = (await db.get<messagedata[]>([
+      "users",
+      interaction.user.id,
+      "conversations",
+      llm,
+    ])).value;
+
+    if (messages === null) {
+      await interaction.reply({
+        content: "Send a message before wiping your conversation!",
+        ephemeral: true,
+      });
+      return
+    }
+
+
+    messages[curconv] = {
+      id: "New Conversation",
+      messages: [],
+    };
+
+    await db.set(
+      ["users", interaction.user.id, "conversations", llm],
+      messages,
+    );
+
     await interaction.reply({
-      content: "Command not implemented",
+      content: `Your conversation with "${llm}" was reset!`,
       ephemeral: true,
     });
   } else if (interaction.commandName === "add-channel") {
