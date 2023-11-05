@@ -179,9 +179,9 @@ client.on("messageCreate", async (message) => {
         let i = 0;
 
         messagechunks.forEach(async (chunk) => {
-          if (i === 0) {
+          if (i <= 0) {
             await msg.edit(chunk);
-            i = 1;
+            i++;
           } else {
             await message.reply(chunk);
           }
