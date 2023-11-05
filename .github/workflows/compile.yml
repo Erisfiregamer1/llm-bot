@@ -23,10 +23,10 @@ jobs:
           deno-version: vx.x.x
           
       - name: Compile LLM Bot (Windows)
-        run: deno compile --no-check --allow-all --target x86_64-pc-windows-msvc --output compiled/llm-bot.exe main.ts
+        run: deno compile --no-check --allow-all --unstable --target x86_64-pc-windows-msvc --output compiled/llm-bot.exe main.ts
         
       - name: Compile LLM Bot (Linux, x86)
-        run: deno compile --no-check --allow-all --target x86_64-unknown-linux-gnu --output compiled/llm-bot.x86_64 main.ts
+        run: deno compile --no-check --allow-all --unstable --target x86_64-unknown-linux-gnu --output compiled/llm-bot.x86_64 main.ts
         
       - name: Upload LLM Bot Artifact (Windows)
         uses: actions/upload-artifact@v3.1.2
