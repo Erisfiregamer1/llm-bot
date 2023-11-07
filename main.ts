@@ -230,14 +230,16 @@ client.on("messageCreate", async (message) => {
           2000,
         );
 
-        let i = 0;
+        let cvalue = 0;
 
-        messagechunks.forEach(async (chunk) => {
-          if (i <= 0) {
-            await msg.edit(chunk);
-            i++;
+        messagechunks.forEach((chunk) => {
+          console.log(cvalue)
+
+          if (cvalue === 0) {
+            cvalue = 1;
+            msg.edit(chunk);
           } else {
-            await message.reply(chunk);
+            message.reply(chunk);
           }
         });
       } catch (err) {
