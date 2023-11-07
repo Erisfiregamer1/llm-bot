@@ -36,6 +36,7 @@ export async function send(
   messages: OpenAI.Chat.ChatCompletionMessage[],
   prompt: string,
   userid: string,
+  images: string[]
 ): Promise<response> {
   // here we go
 
@@ -50,10 +51,30 @@ export async function send(
     });
   }
 
+  const content_arr = []
+
+  content_arr.push({
+    type: "text",
+    text: prompt
+  })
+
+  if (images.length !== 0) {
+
+
+    images.forEach((imgurl) => {
+      content_arr.push({
+        type: "image_url",
+        image_url: imgurl
+      })
+    })
+  }
+
   messages.push({
     role: "user",
-    content: prompt,
+    content: content_arr, // how do I force update type definitions again?!
   });
+
+
 
   const res = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
@@ -62,7 +83,8 @@ export async function send(
       Authorization: `Bearer ${Deno.env.get("OPENAI_API_KEY")}`,
     },
     body: JSON.stringify({
-      model: "gpt-4",
+      max_tokens: 4096,
+      model: "gpt-4-vision-preview",
       messages: messages,
       user: userid,
     }),

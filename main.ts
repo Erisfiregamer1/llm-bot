@@ -1,6 +1,6 @@
 import * as chatgpt from "./bots/chatgpt.ts";
 // import * as bing_chat from "./bots/bing_chat.ts";
-// import * as gpt4 from "./bots/gpt_4.ts";
+import * as gpt4 from "./bots/gpt_4.ts";
 // import * as palm from "./bots/palm.ts";
 
 import OpenAI from "npm:openai";
@@ -81,7 +81,7 @@ client.on("messageCreate", async (message) => {
 
     if (llm === null) {
       // They haven't used the bot before
-      llm = "chatgpt";
+      llm = "gpt4";
       await db.set(["users", message.author.id, "current_bot"], llm);
       await message.reply(
         "Looks like this is your first time using this bot! Run /info to learn how to use the full potential of this bot.",
@@ -89,10 +89,10 @@ client.on("messageCreate", async (message) => {
       error = true;
     } else if (!llm.match(/^(chatgpt|bing|bard|gpt4|llama2)$/g)) {
       // current LLM is corrupt. notify user and reset
-      llm = "chatgpt";
+      llm = "gpt4";
       await db.set(["users", message.author.id, "current_bot"], llm);
       await message.reply(
-        "Your current LLM is corrupted or removed! We've reset you to ChatGPT for now.",
+        "Your current LLM is corrupted or removed! We've reset you to GPT4 for now.",
       );
       error = true;
     }
@@ -162,6 +162,60 @@ client.on("messageCreate", async (message) => {
           curmsgs,
           message.content,
           message.author.id,
+        );
+
+        messages[curconv].messages = resp.messages;
+
+        await db.set(
+          ["users", message.author.id, "conversations", llm],
+          messages,
+        );
+
+        const messagechunks = splitStringIntoChunks(
+          resp.oaires.choices[0].message.content,
+          2000,
+        );
+
+        let i = 0;
+
+        messagechunks.forEach(async (chunk) => {
+          if (i <= 0) {
+            await msg.edit(chunk);
+            i++;
+          } else {
+            await message.reply(chunk);
+          }
+        });
+      } catch (err) {
+        msg.edit(
+          "Something went catastrophically wrong! Please tell the bot host to check the logs, thaaaaanks",
+        );
+        console.error(
+          "hey dumbass this error got thrown, go check that thanks:",
+          err,
+        );
+        return;
+      }
+    } else if (llm === "gpt4") {
+      if (!gpt4.isEnabled) {
+        msg.edit(
+          "This LLM isn't enabled! Please switch to a different LLM to use this bot.",
+        );
+        return;
+      }
+
+      const images: string[] = []
+
+      message.attachments.forEach((image) => {
+        images.push(image.url)
+      })
+
+      try {
+        resp = await gpt4.send(
+          curmsgs,
+          message.content,
+          message.author.id,
+          images
         );
 
         messages[curconv].messages = resp.messages;
