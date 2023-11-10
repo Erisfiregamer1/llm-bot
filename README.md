@@ -2,8 +2,6 @@
 
 A Discord bot for interacting with LLMs.
 
-### We just switched to Deno. Stuff will be broken, here be dragons!
-
 ## Installation tutorial
 
 1. Create a .env file.
@@ -13,7 +11,6 @@ A Discord bot for interacting with LLMs.
 DISCORD_TOKEN=""
 OPENAI_API_KEY=""
 BING_COOKIE=""
-SALAD_API_KEY=""
 PALM_API_KEY=""
 PALM_MODEL=""
 BARD_COOKIE=""
