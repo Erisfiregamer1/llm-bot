@@ -210,6 +210,10 @@ client.on("messageCreate", async (message) => {
         images.push(image.url)
       })
 
+      message.stickers.forEach((image) => {
+        images.push(image.url)
+      })
+
       try {
         resp = await gpt4.send(
           curmsgs,
