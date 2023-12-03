@@ -2,6 +2,8 @@ import * as chatgpt from "./bots/chatgpt.ts";
 // import * as bing_chat from "./bots/bing_chat.ts";
 import * as gpt4 from "./bots/gpt_4.ts";
 // import * as palm from "./bots/palm.ts";
+import * as openrouter from "./bots/openrouter.ts";
+
 
 import OpenAI from "npm:openai";
 
@@ -61,7 +63,16 @@ New database example:
             id: "completion-37",
             messages: [{}] // Alan, insert message object every time you finish here. Wait, Alan, are you still on the team?
           }
-        ]
+        ],
+        openrouter: {
+          api_key: "whatever_the_fuck_it_is"
+          llama2: [
+            {
+              id: "completion-37",
+              messages: [{}] // Alan, insert message object every time you finish here. Wait, Alan, are you still on the team?
+            }
+          ]
+        }
       }
     }
   },
@@ -87,7 +98,7 @@ client.on("messageCreate", async (message) => {
         "Looks like this is your first time using this bot! Run /info to learn how to use the full potential of this bot.",
       );
       error = true;
-    } else if (!llm.match(/^(chatgpt|bing|bard|gpt4|llama2)$/g)) {
+    } else if (!llm.match(/^(chatgpt|bing|bard|gpt4|llama2)$/g) && !llm.startsWith("openrouter^")) {
       // current LLM is corrupt. notify user and reset
       llm = "gpt4";
       await db.set(["users", message.author.id, "current_bot"], llm);
@@ -118,12 +129,26 @@ client.on("messageCreate", async (message) => {
       }
     }
 
-    let messages = (await db.get<messagedata[]>([
-      "users",
-      message.author.id,
-      "conversations",
-      llm,
-    ])).value;
+    let messages;
+
+    if (llm.startsWith("openrouter^")) {
+      const llm_real = llm.split("^")
+
+      messages = (await db.get<messagedata[]>([
+        "users",
+        message.author.id,
+        "conversations",
+        "openrouter",
+        llm_real[llm_real.length - 1]
+      ])).value;
+    } else {
+      messages = (await db.get<messagedata[]>([
+        "users",
+        message.author.id,
+        "conversations",
+        llm,
+      ])).value;
+    }
 
     if (messages === null) {
       // No conversations for this LLM.
@@ -131,10 +156,6 @@ client.on("messageCreate", async (message) => {
         id: "New Conversation",
         messages: [],
       }];
-      await db.set(
-        ["users", message.author.id, "conversations", llm],
-        messages,
-      );
 
       if (error === false) {
         await message.reply(
@@ -148,8 +169,48 @@ client.on("messageCreate", async (message) => {
     const msg = await message.reply("Sending message...");
 
     let resp: gptresponse;
+    if (llm.startsWith("openrouter^")) {
+      const llm_real = llm.split("^")
 
-    if (llm === "chatgpt") {
+      const api_key = (await db.get<string>([
+        "users",
+        message.author.id,
+        "conversations",
+        "openrouter",
+        "api_key"
+      ])).value!;
+
+      resp = await openrouter.send(
+        curmsgs,
+        message.content,
+        message.author.id,
+        llm_real[llm_real.length - 1],
+        api_key
+      )
+
+      messages[curconv].messages = resp.messages;
+
+        await db.set(
+          ["users", message.author.id, "conversations", "openrouter", llm_real[llm_real.length - 1]],
+          messages,
+        );
+
+        const messagechunks = splitStringIntoChunks(
+          resp.oaires.choices[0].message.content,
+          2000,
+        );
+
+        let i = 0;
+
+        messagechunks.forEach(async (chunk) => {
+          if (i <= 0) {
+            await msg.edit(chunk);
+            i++;
+          } else {
+            await message.reply(chunk);
+          }
+        });
+    } else if (llm === "chatgpt") {
       if (!chatgpt.isEnabled) {
         msg.edit(
           "This LLM isn't enabled! Please switch to a different LLM to use this bot.",
@@ -204,7 +265,7 @@ client.on("messageCreate", async (message) => {
         return;
       }
 
-      const images: string[] = []
+      /*const images: string[] = []
 
       message.attachments.forEach((image) => {
         images.push(image.url)
@@ -212,14 +273,13 @@ client.on("messageCreate", async (message) => {
 
       message.stickers.forEach((image) => {
         images.push(image.url)
-      })
+      })*/
 
       try {
         resp = await gpt4.send(
           curmsgs,
           message.content,
           message.author.id,
-          images
         );
 
         messages[curconv].messages = resp.messages;

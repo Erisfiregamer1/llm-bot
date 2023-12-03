@@ -32,7 +32,11 @@ import {
   EmbedBuilder,
   PermissionFlagsBits,
   SlashCommandBuilder,
+  ModalBuilder,
   StringSelectMenuBuilder,
+  TextInputStyle,
+  ModalActionRowComponentBuilder,
+  TextInputBuilder,
 } from "npm:discord.js";
 
 const commands: SlashCommandBuilder[] = [];
@@ -156,7 +160,11 @@ command16.addStringOption((option) =>
     .setRequired(true)
 );
 
-const botamt = 16;
+const command17 = new SlashCommandBuilder();
+command17.setName("set-ai-openrouter");
+command17.setDescription("Select an OpenRouter AI");
+
+const botamt = 17;
 for (let i = 1; i - 1 < botamt; i++) {
   const commandname = "command" + i;
   commands.push(eval(commandname));
@@ -187,10 +195,33 @@ client.on("ready", async () => {
 client.on("interactionCreate", async (interaction) => {
   if (interaction.isStringSelectMenu()) {
     if (interaction.customId === "set-ai") {
-      await interaction.reply({
-        content: "Command not implemented",
-        ephemeral: true,
-      });
+      const llm = interaction.values[0]
+
+      console.log(llm)
+
+      await db.set(["users", interaction.user.id, "current_bot"], llm);
+
+      await interaction.reply({ content: `Set your LLM to \`${llm}\`!`, ephemeral: true });
+    }
+  } else if (interaction.isModalSubmit()) {
+    if (interaction.customId === "set-ai-openrouter") {
+
+      const or_llm = interaction.fields.getTextInputValue('modelName')
+      const api_key = interaction.fields.getTextInputValue('apiKey')
+
+      let llm = `openrouter^${or_llm}`;
+
+      await db.set([
+        "users",
+        interaction.user.id,
+        "conversations",
+        "openrouter",
+        "api_key"
+      ], api_key);
+      await db.set(["users", interaction.user.id, "current_bot"], llm);
+
+
+      await interaction.reply({ content: `Set your LLM to \`${llm}\`!`, ephemeral: true });
     }
   }
   if (!interaction.isChatInputCommand()) return;
@@ -245,6 +276,8 @@ client.on("interactionCreate", async (interaction) => {
       id: "New Conversation",
       messages: [],
     };
+
+
 
     await db.set(
       ["users", interaction.user.id, "conversations", llm],
@@ -401,5 +434,31 @@ client.on("interactionCreate", async (interaction) => {
         `Something went wrong making the images! All I know is the error was "${err}".`,
       );
     }
+  } else if (interaction.commandName === "set-ai-openrouter") {
+    const modal = new ModalBuilder()
+    .setCustomId('set-ai-openrouter')
+    .setTitle('Set your OpenRouter model');
+
+
+  const favoriteColorInput = new TextInputBuilder()
+    .setCustomId('modelName')
+    .setLabel("OpenRouter model")
+    .setStyle(TextInputStyle.Short);
+
+  const hobbiesInput = new TextInputBuilder()
+    .setCustomId('apiKey')
+    .setLabel("OpenRouter API key")
+    .setStyle(TextInputStyle.Short);
+
+  // An action row only holds one text input,
+  // so you need one action row per text input.
+  const firstActionRow = new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(favoriteColorInput);
+  const secondActionRow = new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(hobbiesInput);
+
+  // Add inputs to the modal
+  modal.addComponents(firstActionRow, secondActionRow);
+
+  // Show the modal to the user
+  await interaction.showModal(modal);
   }
 });
