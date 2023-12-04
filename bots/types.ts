@@ -1,6 +1,6 @@
 // Definitions of subtypes are below
 
-type Request = {
+export type Request = {
     // Either "messages" or "prompt" is required
     messages?: Message[];
     prompt?: string;
@@ -33,12 +33,12 @@ type Request = {
 
 // Subtypes:
 
-type TextContent = {
+export type TextContent = {
     type: 'text';
     text: string;
 };
 
-type ImageContentPart = {
+export type ImageContentPart = {
     type: 'image_url';
     image_url: {
         url: string; // URL or base64 encoded image data
@@ -46,27 +46,28 @@ type ImageContentPart = {
     };
 };
 
-type ContentPart = TextContent | ImageContentPart;
+export type ContentPart = TextContent | ImageContentPart;
 
-type Message = {
+export type Message = {
     role: 'user' | 'assistant' | 'system' | 'tool';
     content: string
-      | ContentPart[]; // Only for the 'user' role
+      | ContentPart[]
+      | null;
     name?: string;
 };
 
-type FunctionDescription = {
+export type FunctionDescription = {
     description?: string;
     name: string;
     parameters: object; // JSON Schema object
 };
 
-type Tool = {
+export type Tool = {
     type: 'function';
     function: FunctionDescription;
 };
 
-type ToolChoice = 'none' | 'auto' | {
+export type ToolChoice = 'none' | 'auto' | {
     type: 'function';
     function: {
         name: string;
@@ -75,7 +76,7 @@ type ToolChoice = 'none' | 'auto' | {
 
 // Definitions of subtypes are below
 
-type Response = {
+export type Response = {
     id: string;
     // Depending on whether you set "stream" to "true" and
     // whether you passed in "messages" or a "prompt", you
@@ -86,25 +87,36 @@ type Response = {
     object: 'chat.completion';
 };
 
+export type OpenAIResponse = {
+    id: string;
+    // Depending on whether you set "stream" to "true" and
+    // whether you passed in "messages" or a "prompt", you
+    // will get a different output shape
+    choices: (NonStreamingChoice | StreamingChoice)[];
+    created: number; // Unix timestamp
+    model: string;
+    object: 'chat.completion';
+};
+
 // Subtypes:
 
-type NonChatChoice = {
+export type NonChatChoice = {
     finish_reason: string | null;
     text: string;
 }
 
-type NonStreamingChoice = {
+export type NonStreamingChoice = {
     finish_reason: string | null; // Depends on the model. Ex: 'stop' | 'length' | 'content_filter' | 'tool_calls' | 'function_call'
     message: {
         content: string | null;
-        role: string;
+        role: 'assistant';
         tool_calls?: ToolCall[];
         // Deprecated, replaced by tool_calls
         function_call?: FunctionCall;
     };
 };
 
-type StreamingChoice = {
+export type StreamingChoice = {
     finish_reason: string | null;
     delta: {
         content: string | null;
@@ -115,18 +127,37 @@ type StreamingChoice = {
     };
 };
 
-type Error = {
+export type Error = {
   code: number; // See "Error Handling" section
   message: string;
 }
 
-type FunctionCall = {
+export type OpenAIError = {
+    error: {
+    code: number; // See "Error Handling" section
+    message: string;
+    }
+}
+
+export type FunctionCall = {
     name: string;
     arguments: string; // JSON format arguments
 };
 
-type ToolCall = {
+export type ToolCall = {
     id: string;
     type: 'function';
     function: FunctionCall;
 };
+
+export function isError(
+    value: OpenAIError | OpenAIResponse,
+  ): value is OpenAIError {
+    return "error" in value;
+}
+
+export function isStreaming(
+    value: StreamingChoice | NonStreamingChoice,
+    ): value is StreamingChoice {
+      return "delta" in value;
+    }

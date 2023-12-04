@@ -1,39 +1,45 @@
-import OpenAI from "npm:openai";
-
-import { config } from "npm:dotenv";
-config();
-
 export let isEnabled = true;
+
+import * as types from "./types.ts"
 
 if (!Deno.env.get("OPENAI_API_KEY")) {
   console.warn("No OpenAI API key provided! ChatGPT will be unavailable.");
   isEnabled = false;
 }
 
-type ChatCompletionError = {
-  error: {
-    message: string;
-    type: string;
-    param: null; // Not sure about this one tbh,
-    code: string;
-  };
-};
-
 type response = {
-  oaires: OpenAI.Chat.Completions.ChatCompletion;
-  messages: OpenAI.Chat.ChatCompletionMessage[];
+  oaires: types.Response;
+  messages: types.Message[];
 };
-
-function isError(
-  value: ChatCompletionError | OpenAI.Chat.Completions.ChatCompletion,
-): value is ChatCompletionError {
-  return "error" in value;
-}
 
 // const db = await Deno.openKv("./db.sqlite")
 
+const tools: types.Tool[] = [{
+  type: "function",
+  function: {
+    name: "use-database",
+    description: "Check the Vector Database for information on a subject. Irrelevant data means no relevant data is available.",
+    parameters: {
+      type: "object",
+  properties: {
+    test: {
+      type: "string",
+      description: "This is the 'test' parameter."
+    }
+  },
+  required: ["test"]
+    }
+  }
+}]
+
+/*async function doTools(
+
+): Promise<response> {
+
+}*/
+
 export async function send(
-  messages: OpenAI.Chat.ChatCompletionMessage[],
+  messages: types.Message[],
   prompt: string,
   userid: string,
 ): Promise<response> {
@@ -65,15 +71,24 @@ export async function send(
       model: "gpt-3.5-turbo-16k",
       messages: messages,
       user: userid,
+      tools
     }),
   });
 
-  const resp: OpenAI.Chat.Completions.ChatCompletion | ChatCompletionError =
+  const resp: types.OpenAIResponse | types.OpenAIError =
     await res.json();
 
-  if (isError(resp)) {
+  if (types.isError(resp)) {
     // Fuck.
     throw resp.error.message; // well at least they know why the fuck it crashed??
+  }
+
+  if (types.isStreaming(resp.choices[0])) {
+    throw "oh no"
+  }
+
+  if (resp.choices[0].finish_reason === "tool_calls") {
+    // Do nothing for now. Bot should complain about passing critical component null again
   }
 
   messages.push(resp.choices[0].message);
