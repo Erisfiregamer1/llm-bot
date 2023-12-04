@@ -209,7 +209,7 @@ client.on("interactionCreate", async (interaction) => {
       const or_llm = interaction.fields.getTextInputValue('modelName')
       const api_key = interaction.fields.getTextInputValue('apiKey')
 
-      let llm = `openrouter^${or_llm}`;
+      const llm = `openrouter^${or_llm}`;
 
       await db.set([
         "users",
