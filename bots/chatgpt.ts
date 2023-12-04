@@ -44,19 +44,34 @@ async function doTools(
 
   const toolCalls = oaires.choices[0].message.tool_calls!
 
-  toolCalls.forEach(async (tool) => {
+  const promises = toolCalls.map(async (tool) => {
     if (tool.function.name === "use-database") {
-      const databaseResponse = await vdb.getRelevantDocument(JSON.parse(tool.function.arguments).query)
+      const databaseResponse = await vdb.getRelevantDocument(JSON.parse(tool.function.arguments).query);
 
-      messages.push({
+      return {
         role: "tool",
         content: databaseResponse,
+        tool_call_id: tool.id,
+      };
+    } else {
+      return {
+        role: "tool",
+        content: "Unknown tool or not implemented",
         tool_call_id: tool.id
-      })
+      }
     }
+  });
+
+  // Use Promise.all to wait for all promises to resolve
+  const results = await Promise.all(promises);
+
+  results.forEach((result) => {
+    messages.push(result)
   })
 
     const newres = await send(messages, null, "tool_res")
+
+    console.log(newres)
 
     return newres
   }
@@ -88,6 +103,8 @@ export async function send(
 
  }
 
+ console.log(messages)
+
   const res = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -110,16 +127,17 @@ export async function send(
     throw resp.error.message; // well at least they know why the fuck it crashed??
   }
 
-  let finalresp = {
+  let finalresp: response = {
     oaires: resp,
     messages
   }
+
+  messages.push(resp.choices[0].message);
 
   if (resp.choices[0].finish_reason === "tool_calls") {
     finalresp = await doTools(resp, messages)
   }
 
-  messages.push(resp.choices[0].message);
 
   return finalresp
 }

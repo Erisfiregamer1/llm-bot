@@ -49,7 +49,7 @@ export type ImageContentPart = {
 export type ContentPart = TextContent | ImageContentPart;
 
 export type Message = {
-    role: 'user' | 'assistant' | 'system' | 'tool';
+    role: string;
     content: string
       | ContentPart[]
       | null;

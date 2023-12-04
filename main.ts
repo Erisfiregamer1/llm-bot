@@ -227,6 +227,8 @@ client.on("messageCreate", async (message) => {
 
         messages[curconv].messages = resp.messages;
 
+        console.log(resp.messages)
+
         await db.set(
           ["users", message.author.id, "conversations", llm],
           messages,
