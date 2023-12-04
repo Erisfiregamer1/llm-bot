@@ -2,13 +2,15 @@ export let isEnabled = true;
 
 import * as types from "./types.ts"
 
+import * as vdb from "../vdb.ts"
+
 if (!Deno.env.get("OPENAI_API_KEY")) {
   console.warn("No OpenAI API key provided! ChatGPT will be unavailable.");
   isEnabled = false;
 }
 
 type response = {
-  oaires: types.Response;
+  oaires: types.OpenAIResponse;
   messages: types.Message[];
 };
 
@@ -32,11 +34,22 @@ const tools: types.Tool[] = [{
   }
 }]
 
-/*async function doTools(
-
+async function doTools(
+  oaires: types.OpenAIResponse,
+  messages: types.Message[]
 ): Promise<response> {
+  if (oaires.choices[0].finish_reason !== "tool_calls") {
+    throw "What The Shit?"
+  }
 
-}*/
+  const toolCalls = oaires.choices[0].message.tool_calls!
+
+  toolCalls.forEach((tool) => {
+    if (tool.function.name === "use-database") {
+
+    }
+  })
+}
 
 export async function send(
   messages: types.Message[],
@@ -75,7 +88,7 @@ export async function send(
     }),
   });
 
-  const resp: types.OpenAIResponse | types.OpenAIError =
+  let resp: types.OpenAIResponse | types.OpenAIError =
     await res.json();
 
   if (types.isError(resp)) {
@@ -83,18 +96,16 @@ export async function send(
     throw resp.error.message; // well at least they know why the fuck it crashed??
   }
 
-  if (types.isStreaming(resp.choices[0])) {
-    throw "oh no"
+  let finalresp = {
+    oaires: resp,
+    messages
   }
 
   if (resp.choices[0].finish_reason === "tool_calls") {
-    // Do nothing for now. Bot should complain about passing critical component null again
+    finalresp = await doTools(resp, messages)
   }
 
   messages.push(resp.choices[0].message);
 
-  return {
-    oaires: resp,
-    messages,
-  };
+  return finalresp
 }

@@ -1,72 +1,73 @@
-import OpenAI from "npm:openai";
-
-import { config } from "npm:dotenv";
-config();
-
 export let isEnabled = true;
 
+import * as types from "./types.ts"
+
+import * as vdb from "../vdb.ts"
+
 if (!Deno.env.get("OPENAI_API_KEY")) {
-  console.warn("No OpenAI API key provided! GPT-4 will be unavailable.");
+  console.warn("No OpenAI API key provided! ChatGPT will be unavailable.");
   isEnabled = false;
 }
 
-type ChatCompletionError = {
-  error: {
-    message: string;
-    type: string;
-    param: null; // Not sure about this one tbh,
-    code: string;
-  };
-};
-
 type response = {
-  oaires: OpenAI.Chat.Completions.ChatCompletion;
-  messages: OpenAI.Chat.ChatCompletionMessage[];
+  oaires: types.OpenAIResponse;
+  messages: types.Message[];
 };
-
-function isError(
-  value: ChatCompletionError | OpenAI.Chat.Completions.ChatCompletion,
-): value is ChatCompletionError {
-  return "error" in value;
-}
 
 // const db = await Deno.openKv("./db.sqlite")
 
+const tools: types.Tool[] = [{
+  type: "function",
+  function: {
+    name: "use-database",
+    description: "Check the Vector Database for information on a subject. Irrelevant data means no relevant data is available.",
+    parameters: {
+      type: "object",
+  properties: {
+    test: {
+      type: "string",
+      description: "This is the 'test' parameter."
+    }
+  },
+  required: ["test"]
+    }
+  }
+}]
+
+async function doTools(
+  oaires: types.OpenAIResponse,
+  messages: types.Message[]
+): Promise<response> {
+  if (oaires.choices[0].finish_reason !== "tool_calls") {
+    throw "What The Shit?"
+  }
+
+  const toolCalls = oaires.choices[0].message.tool_calls!
+
+  toolCalls.forEach((tool) => {
+    if (tool.function.name === "use-database") {
+
+    }
+  })
+}
+
 export async function send(
-  messages: OpenAI.Chat.ChatCompletionMessage[],
+  messages: types.Message[],
   prompt: string,
   userid: string,
 ): Promise<response> {
   // here we go
 
   if (!isEnabled) {
-    throw "not_enabled"; // how did you get here.
+    throw "not_enabled";
   }
 
   if (messages.length === 0) {
     messages.push({
       role: "system",
-      content: "You are GPT-4, an LLM by OpenAI.",
+      content: "You are ChatGPT, an LLM by OpenAI.",
     });
   }
-
-  /*const content_arr = []
-
-  content_arr.push({
-    type: "text",
-    text: prompt
-  })
-
-  if (images.length !== 0) {
-
-
-    images.forEach((imgurl) => {
-      content_arr.push({
-        type: "image_url",
-        image_url: imgurl
-      })
-    })
-  }*/
 
   messages.push({
     role: "user",
@@ -80,26 +81,31 @@ export async function send(
       Authorization: `Bearer ${Deno.env.get("OPENAI_API_KEY")}`,
     },
     body: JSON.stringify({
-      max_tokens: 4096,
-      model: "gpt-4-1106-preview",
+      model: "gpt-3.5-turbo-16k",
       messages: messages,
       user: userid,
+      tools
     }),
   });
 
-  const resp: OpenAI.Chat.Completions.ChatCompletion | ChatCompletionError =
+  let resp: types.OpenAIResponse | types.OpenAIError =
     await res.json();
 
-  if (isError(resp)) {
+  if (types.isError(resp)) {
     // Fuck.
-    console.log(resp.error.message)
     throw resp.error.message; // well at least they know why the fuck it crashed??
   }
 
-  console.log(resp);
-
-  return {
+  let finalresp = {
     oaires: resp,
-    messages,
-  };
+    messages
+  }
+
+  if (resp.choices[0].finish_reason === "tool_calls") {
+    finalresp = await doTools(resp, messages)
+  }
+
+  messages.push(resp.choices[0].message);
+
+  return finalresp
 }

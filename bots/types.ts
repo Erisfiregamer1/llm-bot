@@ -81,7 +81,7 @@ export type Response = {
     // Depending on whether you set "stream" to "true" and
     // whether you passed in "messages" or a "prompt", you
     // will get a different output shape
-    choices: (NonStreamingChoice | StreamingChoice | NonChatChoice | Error)[];
+    choices: (NonStreamingChoice | NonChatChoice | Error)[];
     created: number; // Unix timestamp
     model: string;
     object: 'chat.completion';
@@ -92,7 +92,7 @@ export type OpenAIResponse = {
     // Depending on whether you set "stream" to "true" and
     // whether you passed in "messages" or a "prompt", you
     // will get a different output shape
-    choices: (NonStreamingChoice | StreamingChoice)[];
+    choices: NonStreamingChoice[];
     created: number; // Unix timestamp
     model: string;
     object: 'chat.completion';
@@ -110,17 +110,6 @@ export type NonStreamingChoice = {
     message: {
         content: string | null;
         role: 'assistant';
-        tool_calls?: ToolCall[];
-        // Deprecated, replaced by tool_calls
-        function_call?: FunctionCall;
-    };
-};
-
-export type StreamingChoice = {
-    finish_reason: string | null;
-    delta: {
-        content: string | null;
-        role?: string;
         tool_calls?: ToolCall[];
         // Deprecated, replaced by tool_calls
         function_call?: FunctionCall;
@@ -155,9 +144,3 @@ export function isError(
   ): value is OpenAIError {
     return "error" in value;
 }
-
-export function isStreaming(
-    value: StreamingChoice | NonStreamingChoice,
-    ): value is StreamingChoice {
-      return "delta" in value;
-    }

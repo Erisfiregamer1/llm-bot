@@ -4,17 +4,16 @@ import * as gpt4 from "./bots/gpt_4.ts";
 // import * as palm from "./bots/palm.ts";
 import * as openrouter from "./bots/openrouter.ts";
 
-
-import OpenAI from "npm:openai";
+import * as types from "./bots/types.ts"
 
 type messagedata = {
   id: string;
-  messages: OpenAI.Chat.ChatCompletionMessage[];
-};
+  messages: types.Message[]
+}
 
 type gptresponse = {
-  oaires: OpenAI.Chat.Completions.ChatCompletion;
-  messages: OpenAI.Chat.ChatCompletionMessage[];
+  oaires: types.OpenAIResponse;
+  messages: types.Message[];
 };
 
 import "./slashcode.ts";
@@ -169,7 +168,7 @@ client.on("messageCreate", async (message) => {
     const msg = await message.reply("Sending message...");
 
     let resp: gptresponse;
-    if (llm.startsWith("openrouter^")) {
+    /*if (llm.startsWith("openrouter^")) {
       const llm_real = llm.split("^")
 
       const api_key = (await db.get<string>([
@@ -210,7 +209,8 @@ client.on("messageCreate", async (message) => {
             await message.reply(chunk);
           }
         });
-    } else if (llm === "chatgpt") {
+    } else */
+    if (llm === "chatgpt") {
       if (!chatgpt.isEnabled) {
         msg.edit(
           "This LLM isn't enabled! Please switch to a different LLM to use this bot.",
