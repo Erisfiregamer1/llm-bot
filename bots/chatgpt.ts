@@ -24,12 +24,12 @@ const tools: types.Tool[] = [{
     parameters: {
       type: "object",
   properties: {
-    test: {
+    query: {
       type: "string",
-      description: "This is the 'test' parameter."
+      description: "Request to send to database"
     }
   },
-  required: ["test"]
+  required: ["query"]
     }
   }
 }]
@@ -44,16 +44,26 @@ async function doTools(
 
   const toolCalls = oaires.choices[0].message.tool_calls!
 
-  toolCalls.forEach((tool) => {
+  toolCalls.forEach(async (tool) => {
     if (tool.function.name === "use-database") {
+      const databaseResponse = await vdb.getRelevantDocument(JSON.parse(tool.function.arguments).query)
 
+      messages.push({
+        role: "tool",
+        content: databaseResponse,
+        tool_call_id: tool.id
+      })
     }
   })
-}
+
+    const newres = await send(messages, null, "tool_res")
+
+    return newres
+  }
 
 export async function send(
   messages: types.Message[],
-  prompt: string,
+  prompt: string | null,
   userid: string,
 ): Promise<response> {
   // here we go
@@ -69,10 +79,14 @@ export async function send(
     });
   }
 
+  if (prompt !== null) {
+
   messages.push({
     role: "user",
     content: prompt,
   });
+
+ }
 
   const res = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
@@ -88,7 +102,7 @@ export async function send(
     }),
   });
 
-  let resp: types.OpenAIResponse | types.OpenAIError =
+  const resp: types.OpenAIResponse | types.OpenAIError =
     await res.json();
 
   if (types.isError(resp)) {

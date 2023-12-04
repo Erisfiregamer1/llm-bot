@@ -2,7 +2,7 @@ import * as chatgpt from "./bots/chatgpt.ts";
 // import * as bing_chat from "./bots/bing_chat.ts";
 import * as gpt4 from "./bots/gpt_4.ts";
 // import * as palm from "./bots/palm.ts";
-import * as openrouter from "./bots/openrouter.ts";
+// import * as openrouter from "./bots/openrouter.ts";
 
 import * as types from "./bots/types.ts"
 

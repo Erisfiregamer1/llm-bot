@@ -54,6 +54,7 @@ export type Message = {
       | ContentPart[]
       | null;
     name?: string;
+    tool_call_id?: string;
 };
 
 export type FunctionDescription = {
