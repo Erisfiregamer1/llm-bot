@@ -1,36 +1,16 @@
-import OpenAI from "npm:openai";
+export const isEnabled = true; // OpenRouter is always enabled as a fallback option in case the bot's screwed up
 
-import { config } from "npm:dotenv";
-config();
-
-export let isEnabled = true;
-
-type ChatCompletionError = {
-  error: {
-    message: string;
-    type: string;
-    param: null; // Not sure about this one tbh,
-    code: string;
-  };
-};
+import * as types from "./types.ts"
 
 type response = {
-  oaires: OpenAI.Chat.Completions.ChatCompletion;
-  messages: OpenAI.Chat.ChatCompletionMessage[];
+  oaires: types.Response;
+  messages: types.Message[];
 };
 
-function isError(
-  value: ChatCompletionError | OpenAI.Chat.Completions.ChatCompletion,
-): value is ChatCompletionError {
-  return "error" in value;
-}
-
-const db = await Deno.openKv("./db.sqlite")
-
 export async function send(
-  messages: OpenAI.Chat.ChatCompletionMessage[],
-  prompt: string,
-  userid: string,
+  messages: types.Message[],
+  prompt: string | null,
+  _userid: string, // Included in case it becomes possible to use. OpenRouter doesn't use this one.
   model: string,
   api_key: string
 ): Promise<response> {
@@ -47,10 +27,16 @@ export async function send(
     });
   }
 
+  if (prompt !== null) {
+
   messages.push({
     role: "user",
     content: prompt,
   });
+
+ }
+
+ console.log(messages)
 
   const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",
@@ -60,22 +46,24 @@ export async function send(
     },
     body: JSON.stringify({
       model,
-      messages: messages,
+      messages: messages
     }),
   });
 
-  const resp: OpenAI.Chat.Completions.ChatCompletion | ChatCompletionError =
+  const resp: types.Response | types.Error =
     await res.json();
 
-  if (isError(resp)) {
+  if (types.isError(resp)) {
     // Fuck.
     throw resp.error.message; // well at least they know why the fuck it crashed??
   }
 
+  const finalresp: response = {
+    oaires: resp,
+    messages
+  }
+
   messages.push(resp.choices[0].message);
 
-  return {
-    oaires: resp,
-    messages,
-  };
+  return finalresp
 }

@@ -10,7 +10,7 @@ if (!Deno.env.get("OPENAI_API_KEY")) {
 }
 
 type response = {
-  oaires: types.OpenAIResponse;
+  oaires: types.Response;
   messages: types.Message[];
 };
 
@@ -35,7 +35,7 @@ const tools: types.Tool[] = [{
 }]
 
 async function doTools(
-  oaires: types.OpenAIResponse,
+  oaires: types.Response,
   messages: types.Message[]
 ): Promise<response> {
   if (oaires.choices[0].finish_reason !== "tool_calls") {
@@ -119,7 +119,7 @@ export async function send(
     }),
   });
 
-  const resp: types.OpenAIResponse | types.OpenAIError =
+  const resp: types.Response | types.Error =
     await res.json();
 
   if (types.isError(resp)) {

@@ -2,7 +2,7 @@ import * as chatgpt from "./bots/chatgpt.ts";
 // import * as bing_chat from "./bots/bing_chat.ts";
 import * as gpt4 from "./bots/gpt_4.ts";
 // import * as palm from "./bots/palm.ts";
-// import * as openrouter from "./bots/openrouter.ts";
+import * as openrouter from "./bots/openrouter.ts";
 
 import * as types from "./bots/types.ts"
 
@@ -12,7 +12,7 @@ type messagedata = {
 }
 
 type gptresponse = {
-  oaires: types.OpenAIResponse;
+  oaires: types.Response;
   messages: types.Message[];
 };
 
@@ -168,7 +168,7 @@ client.on("messageCreate", async (message) => {
     const msg = await message.reply("Sending message...");
 
     let resp: gptresponse;
-    /*if (llm.startsWith("openrouter^")) {
+    if (llm.startsWith("openrouter^")) {
       const llm_real = llm.split("^")
 
       const api_key = (await db.get<string>([
@@ -209,7 +209,7 @@ client.on("messageCreate", async (message) => {
             await message.reply(chunk);
           }
         });
-    } else */
+    } else 
     if (llm === "chatgpt") {
       if (!chatgpt.isEnabled) {
         msg.edit(
@@ -267,7 +267,10 @@ client.on("messageCreate", async (message) => {
         return;
       }
 
-      /*const images: string[] = []
+      /*
+      // Was used for message implementation. Removed due to modelswap
+      
+      const images: string[] = []
 
       message.attachments.forEach((image) => {
         images.push(image.url)

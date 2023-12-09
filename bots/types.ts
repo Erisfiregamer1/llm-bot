@@ -82,31 +82,13 @@ export type Response = {
     // Depending on whether you set "stream" to "true" and
     // whether you passed in "messages" or a "prompt", you
     // will get a different output shape
-    choices: (NonStreamingChoice | NonChatChoice | Error)[];
+    choices: Choice[]; // LLM Bot will NEVER pass a streaming/nonchat choice so...
     created: number; // Unix timestamp
     model: string;
     object: 'chat.completion';
 };
-
-export type OpenAIResponse = {
-    id: string;
-    // Depending on whether you set "stream" to "true" and
-    // whether you passed in "messages" or a "prompt", you
-    // will get a different output shape
-    choices: NonStreamingChoice[];
-    created: number; // Unix timestamp
-    model: string;
-    object: 'chat.completion';
-};
-
 // Subtypes:
-
-export type NonChatChoice = {
-    finish_reason: string | null;
-    text: string;
-}
-
-export type NonStreamingChoice = {
+export type Choice = {
     finish_reason: string | null; // Depends on the model. Ex: 'stop' | 'length' | 'content_filter' | 'tool_calls' | 'function_call'
     message: {
         content: string | null;
@@ -118,11 +100,6 @@ export type NonStreamingChoice = {
 };
 
 export type Error = {
-  code: number; // See "Error Handling" section
-  message: string;
-}
-
-export type OpenAIError = {
     error: {
     code: number; // See "Error Handling" section
     message: string;
@@ -141,7 +118,7 @@ export type ToolCall = {
 };
 
 export function isError(
-    value: OpenAIError | OpenAIResponse,
-  ): value is OpenAIError {
+    value: Error | Response,
+  ): value is Error {
     return "error" in value;
 }
