@@ -1,6 +1,6 @@
 export const isEnabled = true; // OpenRouter is always enabled as a fallback option in case the bot's screwed up
 
-import * as types from "./types.ts"
+import * as types from "./types.ts";
 
 type response = {
   oaires: types.Response;
@@ -12,7 +12,7 @@ export async function send(
   prompt: string | null,
   _userid: string, // Included in case it becomes possible to use. OpenRouter doesn't use this one.
   model: string,
-  api_key: string
+  api_key: string,
 ): Promise<response> {
   // here we go
 
@@ -28,15 +28,13 @@ export async function send(
   }
 
   if (prompt !== null) {
+    messages.push({
+      role: "user",
+      content: prompt,
+    });
+  }
 
-  messages.push({
-    role: "user",
-    content: prompt,
-  });
-
- }
-
- console.log(messages)
+  console.log(messages);
 
   const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",
@@ -46,12 +44,11 @@ export async function send(
     },
     body: JSON.stringify({
       model,
-      messages: messages
+      messages: messages,
     }),
   });
 
-  const resp: types.Response | types.Error =
-    await res.json();
+  const resp: types.Response | types.Error = await res.json();
 
   if (types.isError(resp)) {
     // Fuck.
@@ -60,10 +57,10 @@ export async function send(
 
   const finalresp: response = {
     oaires: resp,
-    messages
-  }
+    messages,
+  };
 
   messages.push(resp.choices[0].message);
 
-  return finalresp
+  return finalresp;
 }

@@ -1,8 +1,8 @@
 export let isEnabled = true;
 
-import * as types from "./types.ts"
+import * as types from "./types.ts";
 
-import * as vdb from "../vdb.ts"
+import * as vdb from "../vdb.ts";
 
 if (!Deno.env.get("OPENAI_API_KEY")) {
   console.warn("No OpenAI API key provided! ChatGPT will be unavailable.");
@@ -20,33 +20,36 @@ const tools: types.Tool[] = [{
   type: "function",
   function: {
     name: "use-database",
-    description: "Check the Vector Database for information on a subject. Irrelevant data means no relevant data is available.",
+    description:
+      "Check the Vector Database for information on a subject. Irrelevant data means no relevant data is available.",
     parameters: {
       type: "object",
-  properties: {
-    query: {
-      type: "string",
-      description: "Request to send to database"
-    }
+      properties: {
+        query: {
+          type: "string",
+          description: "Request to send to database",
+        },
+      },
+      required: ["query"],
+    },
   },
-  required: ["query"]
-    }
-  }
-}]
+}];
 
 async function doTools(
   oaires: types.Response,
-  messages: types.Message[]
+  messages: types.Message[],
 ): Promise<response> {
   if (oaires.choices[0].finish_reason !== "tool_calls") {
-    throw "What The Shit?"
+    throw "What The Shit?";
   }
 
-  const toolCalls = oaires.choices[0].message.tool_calls!
+  const toolCalls = oaires.choices[0].message.tool_calls!;
 
   const promises = toolCalls.map(async (tool) => {
     if (tool.function.name === "use-database") {
-      const databaseResponse = await vdb.getRelevantDocument(JSON.parse(tool.function.arguments).query);
+      const databaseResponse = await vdb.getRelevantDocument(
+        JSON.parse(tool.function.arguments).query,
+      );
 
       return {
         role: "tool",
@@ -57,8 +60,8 @@ async function doTools(
       return {
         role: "tool",
         content: "Unknown tool or not implemented",
-        tool_call_id: tool.id
-      }
+        tool_call_id: tool.id,
+      };
     }
   });
 
@@ -66,15 +69,15 @@ async function doTools(
   const results = await Promise.all(promises);
 
   results.forEach((result) => {
-    messages.push(result)
-  })
+    messages.push(result);
+  });
 
-    const newres = await send(messages, null, "tool_res")
+  const newres = await send(messages, null, "tool_res");
 
-    console.log(newres)
+  console.log(newres);
 
-    return newres
-  }
+  return newres;
+}
 
 export async function send(
   messages: types.Message[],
@@ -95,15 +98,13 @@ export async function send(
   }
 
   if (prompt !== null) {
+    messages.push({
+      role: "user",
+      content: prompt,
+    });
+  }
 
-  messages.push({
-    role: "user",
-    content: prompt,
-  });
-
- }
-
- console.log(messages)
+  console.log(messages);
 
   const res = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
@@ -115,12 +116,11 @@ export async function send(
       model: "gpt-4-1106-preview",
       messages: messages,
       user: userid,
-      tools
+      tools,
     }),
   });
 
-  const resp: types.Response | types.Error =
-    await res.json();
+  const resp: types.Response | types.Error = await res.json();
 
   if (types.isError(resp)) {
     // Fuck.
@@ -129,15 +129,14 @@ export async function send(
 
   let finalresp: response = {
     oaires: resp,
-    messages
-  }
+    messages,
+  };
 
   messages.push(resp.choices[0].message);
 
   if (resp.choices[0].finish_reason === "tool_calls") {
-    finalresp = await doTools(resp, messages)
+    finalresp = await doTools(resp, messages);
   }
 
-
-  return finalresp
+  return finalresp;
 }

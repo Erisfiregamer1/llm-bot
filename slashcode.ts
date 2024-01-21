@@ -7,6 +7,7 @@ import { isEnabled as palmIsEnabled } from "./bots/palm.ts";
 import { isEnabled as chatgptIsEnabled } from "./bots/chatgpt.ts";
 import { isEnabled as bingIsEnabled } from "./bots/bing_chat.ts";
 import { isEnabled as gpt4IsEnabled } from "./bots/gpt_4.ts";
+import { isEnabled as gpt4vIsEnabled } from "./bots/gpt_4_vision.ts";
 
 console.log("Loading slash commands...");
 
@@ -30,13 +31,13 @@ import {
   ActionRowBuilder,
   ColorResolvable,
   EmbedBuilder,
+  ModalActionRowComponentBuilder,
+  ModalBuilder,
   PermissionFlagsBits,
   SlashCommandBuilder,
-  ModalBuilder,
   StringSelectMenuBuilder,
-  TextInputStyle,
-  ModalActionRowComponentBuilder,
   TextInputBuilder,
+  TextInputStyle,
 } from "npm:discord.js";
 
 const commands: SlashCommandBuilder[] = [];
@@ -195,19 +196,21 @@ client.on("ready", async () => {
 client.on("interactionCreate", async (interaction) => {
   if (interaction.isStringSelectMenu()) {
     if (interaction.customId === "set-ai") {
-      const llm = interaction.values[0]
+      const llm = interaction.values[0];
 
-      console.log(llm)
+      console.log(llm);
 
       await db.set(["users", interaction.user.id, "current_bot"], llm);
 
-      await interaction.reply({ content: `Set your LLM to \`${llm}\`!`, ephemeral: true });
+      await interaction.reply({
+        content: `Set your LLM to \`${llm}\`!`,
+        ephemeral: true,
+      });
     }
   } else if (interaction.isModalSubmit()) {
     if (interaction.customId === "set-ai-openrouter") {
-
-      const or_llm = interaction.fields.getTextInputValue('modelName')
-      const api_key = interaction.fields.getTextInputValue('apiKey')
+      const or_llm = interaction.fields.getTextInputValue("modelName");
+      const api_key = interaction.fields.getTextInputValue("apiKey");
 
       const llm = `openrouter^${or_llm}`;
 
@@ -216,12 +219,14 @@ client.on("interactionCreate", async (interaction) => {
         interaction.user.id,
         "conversations",
         "openrouter",
-        "api_key"
+        "api_key",
       ], api_key);
       await db.set(["users", interaction.user.id, "current_bot"], llm);
 
-
-      await interaction.reply({ content: `Set your LLM to \`${llm}\`!`, ephemeral: true });
+      await interaction.reply({
+        content: `Set your LLM to \`${llm}\`!`,
+        ephemeral: true,
+      });
     }
   }
   if (!interaction.isChatInputCommand()) return;
@@ -239,9 +244,9 @@ client.on("interactionCreate", async (interaction) => {
 
     await interaction.reply({ embeds: [embed], ephemeral: true });
   } else if (interaction.commandName === "wipe") {
-
     const llm =
-      (await db.get<string>(["users", interaction.user.id, "current_bot"])).value; // After reading the typedocs I realized this is the cleaner way to do this
+      (await db.get<string>(["users", interaction.user.id, "current_bot"]))
+        .value; // After reading the typedocs I realized this is the cleaner way to do this
     const curconv = (await db.get<number>([
       "users",
       interaction.user.id,
@@ -253,7 +258,7 @@ client.on("interactionCreate", async (interaction) => {
         content: "Send a message before wiping your conversation!",
         ephemeral: true,
       });
-      return
+      return;
     }
 
     const messages = (await db.get<messagedata[]>([
@@ -268,16 +273,13 @@ client.on("interactionCreate", async (interaction) => {
         content: "Send a message before wiping your conversation!",
         ephemeral: true,
       });
-      return
+      return;
     }
-
 
     messages[curconv] = {
       id: "New Conversation",
       messages: [],
     };
-
-
 
     await db.set(
       ["users", interaction.user.id, "conversations", llm],
@@ -316,8 +318,13 @@ client.on("interactionCreate", async (interaction) => {
     const gpt4 = {
       label: "GPT-4",
       value: "gpt4",
-      description:
-        "Better version of ChatGPT. Powers Bing Chat. Has no internet.",
+      description: "Better version of ChatGPT. Has VDB access.",
+    };
+
+    const gpt4_v = {
+      label: "GPT-4 Vision",
+      value: "gpt4_v",
+      description: "GPT-4 but it can take vision inputs.",
     };
 
     const palmodel = Deno.env.get("PALM_MODEL");
@@ -347,6 +354,7 @@ client.on("interactionCreate", async (interaction) => {
     if (chatgptIsEnabled) options.push(chatgpt);
     if (bingIsEnabled) options.push(bing_chat);
     if (gpt4IsEnabled) options.push(gpt4);
+    if (gpt4vIsEnabled) options.push(gpt4_v);
     if (palmIsEnabled) options.push(palm);
 
     const select = new StringSelectMenuBuilder().setCustomId("set-ai")
@@ -436,29 +444,32 @@ client.on("interactionCreate", async (interaction) => {
     }
   } else if (interaction.commandName === "set-ai-openrouter") {
     const modal = new ModalBuilder()
-    .setCustomId('set-ai-openrouter')
-    .setTitle('Set your OpenRouter model');
+      .setCustomId("set-ai-openrouter")
+      .setTitle("Set your OpenRouter model");
 
+    const favoriteColorInput = new TextInputBuilder()
+      .setCustomId("modelName")
+      .setLabel("OpenRouter model")
+      .setStyle(TextInputStyle.Short);
 
-  const favoriteColorInput = new TextInputBuilder()
-    .setCustomId('modelName')
-    .setLabel("OpenRouter model")
-    .setStyle(TextInputStyle.Short);
+    const hobbiesInput = new TextInputBuilder()
+      .setCustomId("apiKey")
+      .setLabel("OpenRouter API key")
+      .setStyle(TextInputStyle.Short);
 
-  const hobbiesInput = new TextInputBuilder()
-    .setCustomId('apiKey')
-    .setLabel("OpenRouter API key")
-    .setStyle(TextInputStyle.Short);
+    // An action row only holds one text input,
+    // so you need one action row per text input.
+    const firstActionRow = new ActionRowBuilder<
+      ModalActionRowComponentBuilder
+    >().addComponents(favoriteColorInput);
+    const secondActionRow = new ActionRowBuilder<
+      ModalActionRowComponentBuilder
+    >().addComponents(hobbiesInput);
 
-  // An action row only holds one text input,
-  // so you need one action row per text input.
-  const firstActionRow = new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(favoriteColorInput);
-  const secondActionRow = new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(hobbiesInput);
+    // Add inputs to the modal
+    modal.addComponents(firstActionRow, secondActionRow);
 
-  // Add inputs to the modal
-  modal.addComponents(firstActionRow, secondActionRow);
-
-  // Show the modal to the user
-  await interaction.showModal(modal);
+    // Show the modal to the user
+    await interaction.showModal(modal);
   }
 });
