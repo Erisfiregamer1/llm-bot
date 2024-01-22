@@ -119,16 +119,19 @@ client.on("messageCreate", async (message) => {
 
     if (isMessageProcessing) {
       try {
-      await message.delete()
-      return
+        await message.delete();
+        return;
       } catch (_err) {
-      await message.reply("A message is already being processed!")
-      return
+        await message.reply("A message is already being processed!");
+        return;
       }
     } else {
-      isMessageProcessing = true
+      isMessageProcessing = true;
 
-      await db.set(["users", message.author.id, "messageWaiting"], isMessageProcessing)
+      await db.set(
+        ["users", message.author.id, "messageWaiting"],
+        isMessageProcessing,
+      );
     }
 
     let curconv = (await db.get<number>([
@@ -234,9 +237,12 @@ client.on("messageCreate", async (message) => {
       messagechunks.forEach((chunk) => {
         if (cvalue === 0) {
           cvalue = 1;
-          isMessageProcessing = false
+          isMessageProcessing = false;
 
-          db.set(["users", message.author.id, "messageWaiting"], isMessageProcessing)
+          db.set(
+            ["users", message.author.id, "messageWaiting"],
+            isMessageProcessing,
+          );
           msg.edit(chunk);
         } else {
           message.reply(chunk);
@@ -276,18 +282,24 @@ client.on("messageCreate", async (message) => {
         messagechunks.forEach((chunk) => {
           if (cvalue === 0) {
             cvalue = 1;
-            isMessageProcessing = false
+            isMessageProcessing = false;
 
-            db.set(["users", message.author.id, "messageWaiting"], isMessageProcessing)
+            db.set(
+              ["users", message.author.id, "messageWaiting"],
+              isMessageProcessing,
+            );
             msg.edit(chunk);
           } else {
             message.reply(chunk);
           }
         });
       } catch (err) {
-        isMessageProcessing = false
+        isMessageProcessing = false;
 
-        db.set(["users", message.author.id, "messageWaiting"], isMessageProcessing)
+        db.set(
+          ["users", message.author.id, "messageWaiting"],
+          isMessageProcessing,
+        );
         msg.edit(
           "Something went catastrophically wrong! Please tell the bot host to check the logs, thaaaaanks",
         );
@@ -329,18 +341,24 @@ client.on("messageCreate", async (message) => {
         messagechunks.forEach((chunk) => {
           if (cvalue === 0) {
             cvalue = 1;
-            isMessageProcessing = false
+            isMessageProcessing = false;
 
-            db.set(["users", message.author.id, "messageWaiting"], isMessageProcessing)
+            db.set(
+              ["users", message.author.id, "messageWaiting"],
+              isMessageProcessing,
+            );
             msg.edit(chunk);
           } else {
             message.reply(chunk);
           }
         });
       } catch (err) {
-        isMessageProcessing = false
+        isMessageProcessing = false;
 
-        db.set(["users", message.author.id, "messageWaiting"], isMessageProcessing)
+        db.set(
+          ["users", message.author.id, "messageWaiting"],
+          isMessageProcessing,
+        );
         msg.edit(
           "Something went catastrophically wrong! Please tell the bot host to check the logs, thaaaaanks",
         );
@@ -393,18 +411,24 @@ client.on("messageCreate", async (message) => {
         messagechunks.forEach((chunk) => {
           if (cvalue === 0) {
             cvalue = 1;
-            isMessageProcessing = false
+            isMessageProcessing = false;
 
-            db.set(["users", message.author.id, "messageWaiting"], isMessageProcessing)
+            db.set(
+              ["users", message.author.id, "messageWaiting"],
+              isMessageProcessing,
+            );
             msg.edit(chunk);
           } else {
             message.reply(chunk);
           }
         });
       } catch (err) {
-        isMessageProcessing = false
+        isMessageProcessing = false;
 
-        db.set(["users", message.author.id, "messageWaiting"], isMessageProcessing)
+        db.set(
+          ["users", message.author.id, "messageWaiting"],
+          isMessageProcessing,
+        );
         msg.edit(
           "Something went catastrophically wrong! Please tell the bot host to check the logs, thaaaaanks",
         );
