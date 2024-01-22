@@ -99,7 +99,7 @@ client.on("messageCreate", async (message) => {
       );
       error = true;
     } else if (
-      !llm.match(/^(chatgpt|bing|bard|gpt4|llama2)$/g) &&
+      !llm.match(/^(chatgpt|bing|bard|gpt4|gpt4_v)$/g) &&
       !llm.startsWith("openrouter^")
     ) {
       // current LLM is corrupt. notify user and reset
@@ -109,6 +109,26 @@ client.on("messageCreate", async (message) => {
         "Your current LLM is corrupted or removed! We've reset you to GPT4 for now.",
       );
       error = true;
+    }
+
+    let isMessageProcessing = (await db.get<boolean>([
+      "users",
+      message.author.id,
+      "messageWaiting",
+    ])).value;
+
+    if (isMessageProcessing) {
+      try {
+      await message.delete()
+      return
+      } catch (_err) {
+      await message.reply("A message is already being processed!")
+      return
+      }
+    } else {
+      isMessageProcessing = true
+
+      await db.set(["users", message.author.id, "messageWaiting"], isMessageProcessing)
     }
 
     let curconv = (await db.get<number>([
@@ -209,14 +229,17 @@ client.on("messageCreate", async (message) => {
         2000,
       );
 
-      let i = 0;
+      let cvalue = 0;
 
-      messagechunks.forEach(async (chunk) => {
-        if (i <= 0) {
-          await msg.edit(chunk);
-          i++;
+      messagechunks.forEach((chunk) => {
+        if (cvalue === 0) {
+          cvalue = 1;
+          isMessageProcessing = false
+
+          db.set(["users", message.author.id, "messageWaiting"], isMessageProcessing)
+          msg.edit(chunk);
         } else {
-          await message.reply(chunk);
+          message.reply(chunk);
         }
       });
     } else if (llm === "chatgpt") {
@@ -248,17 +271,23 @@ client.on("messageCreate", async (message) => {
           2000,
         );
 
-        let i = 0;
+        let cvalue = 0;
 
-        messagechunks.forEach(async (chunk) => {
-          if (i <= 0) {
-            await msg.edit(chunk);
-            i++;
+        messagechunks.forEach((chunk) => {
+          if (cvalue === 0) {
+            cvalue = 1;
+            isMessageProcessing = false
+
+            db.set(["users", message.author.id, "messageWaiting"], isMessageProcessing)
+            msg.edit(chunk);
           } else {
-            await message.reply(chunk);
+            message.reply(chunk);
           }
         });
       } catch (err) {
+        isMessageProcessing = false
+
+        db.set(["users", message.author.id, "messageWaiting"], isMessageProcessing)
         msg.edit(
           "Something went catastrophically wrong! Please tell the bot host to check the logs, thaaaaanks",
         );
@@ -298,16 +327,20 @@ client.on("messageCreate", async (message) => {
         let cvalue = 0;
 
         messagechunks.forEach((chunk) => {
-          console.log(cvalue);
-
           if (cvalue === 0) {
             cvalue = 1;
+            isMessageProcessing = false
+
+            db.set(["users", message.author.id, "messageWaiting"], isMessageProcessing)
             msg.edit(chunk);
           } else {
             message.reply(chunk);
           }
         });
       } catch (err) {
+        isMessageProcessing = false
+
+        db.set(["users", message.author.id, "messageWaiting"], isMessageProcessing)
         msg.edit(
           "Something went catastrophically wrong! Please tell the bot host to check the logs, thaaaaanks",
         );
@@ -358,16 +391,20 @@ client.on("messageCreate", async (message) => {
         let cvalue = 0;
 
         messagechunks.forEach((chunk) => {
-          console.log(cvalue);
-
           if (cvalue === 0) {
             cvalue = 1;
+            isMessageProcessing = false
+
+            db.set(["users", message.author.id, "messageWaiting"], isMessageProcessing)
             msg.edit(chunk);
           } else {
             message.reply(chunk);
           }
         });
       } catch (err) {
+        isMessageProcessing = false
+
+        db.set(["users", message.author.id, "messageWaiting"], isMessageProcessing)
         msg.edit(
           "Something went catastrophically wrong! Please tell the bot host to check the logs, thaaaaanks",
         );
