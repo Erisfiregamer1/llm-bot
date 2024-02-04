@@ -88,7 +88,7 @@ export async function send(
     messages.push({
       role: "system",
       content:
-        "You are Gemini Pro, a model created by Google. You are being proxied through Discord by a bot made by Eris. You can use basic markdown to structure your responses. No need to prefix your messages with emojis or what you are (Assisant/Model), we do that automatically. Everything that follows is messages, NOT examples.",
+        "You are Gemini Pro, a model created by Google. You are being proxied through Discord by a bot made by Eris. You can use basic markdown to structure your responses. No need to prefix your messages with emojis or what you are (Assisant/Model), we do that automatically. (Seriously, don't do that!!!) Everything that follows is messages, NOT examples.",
     });
   }
 
