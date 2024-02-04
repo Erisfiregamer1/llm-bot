@@ -3,7 +3,7 @@ import client from "./client.ts";
 import { BingImageCreator } from "https://esm.sh/@timefox/bic-sydney@1.1.4";
 import crypto from "node:crypto";
 
-import { isEnabled as palmIsEnabled } from "./bots/palm.ts";
+import { isEnabled as geminiIsEnabled } from "./bots/gemini.ts";
 import { isEnabled as chatgptIsEnabled } from "./bots/chatgpt.ts";
 import { isEnabled as bingIsEnabled } from "./bots/bing_chat.ts";
 import { isEnabled as gpt4IsEnabled } from "./bots/gpt_4.ts";
@@ -327,35 +327,17 @@ client.on("interactionCreate", async (interaction) => {
       description: "GPT-4 but it can take vision inputs.",
     };
 
-    const palmodel = Deno.env.get("PALM_MODEL");
-
-    let palm;
-
-    if (
-      palmodel ===
-        "string"
-    ) {
-      palm = {
-        label: `PaLM (${palmodel.replace("models/", "")})`,
-        value: "palm",
-        description: `Google's AI model. The specific model is ${
-          palmodel.replace("models/", "")
-        }.`,
-      };
-    } else {
-      palm = {
-        label: `PaLM (DISABLED)`,
-        value: "palm",
-        description:
-          `You shouldn't be seeing this. (Palm's model isn't configured)`,
-      };
-    }
+    let gemini = {
+      label: `Gemini Pro`,
+      value: "gemini",
+      description: `Google's AI model, specifically their 2nd best.`,
+    };
 
     if (chatgptIsEnabled) options.push(chatgpt);
     if (bingIsEnabled) options.push(bing_chat);
     if (gpt4IsEnabled) options.push(gpt4);
     if (gpt4vIsEnabled) options.push(gpt4_v);
-    if (palmIsEnabled) options.push(palm);
+    if (geminiIsEnabled) options.push(gemini);
 
     const select = new StringSelectMenuBuilder().setCustomId("set-ai")
       .setPlaceholder("Select an AI").addOptions(options);

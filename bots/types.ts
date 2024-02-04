@@ -123,3 +123,39 @@ export function isError(
 ): value is Error {
   return "error" in value;
 }
+
+// ChatGPT'd types ahead, expect problems
+
+type GeminiSafetyRating = {
+  category:
+    | "HARM_CATEGORY_SEXUALLY_EXPLICIT"
+    | "HARM_CATEGORY_HATE_SPEECH"
+    | "HARM_CATEGORY_HARASSMENT"
+    | "HARM_CATEGORY_DANGEROUS_CONTENT";
+  probability: "NEGLIGIBLE";
+};
+
+type GeminiContentPart = {
+  text: string;
+};
+
+type GeminiContent = {
+  parts: GeminiContentPart[];
+  role: string;
+};
+
+type GeminiCandidate = {
+  content: GeminiContent;
+  finishReason: string;
+  index: number;
+  safetyRatings: GeminiSafetyRating[];
+};
+
+type GeminiPromptFeedback = {
+  safetyRatings: GeminiSafetyRating[];
+};
+
+export type geminiResponse = {
+  candidates: GeminiCandidate[];
+  promptFeedback: GeminiPromptFeedback;
+};

@@ -71,7 +71,7 @@ export async function send(
       model: "gpt-4-vision-preview",
       messages: messages,
       user: userid,
-      max_tokens: "2048"
+      max_tokens: "2048",
     }),
   });
 

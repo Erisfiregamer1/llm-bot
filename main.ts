@@ -2,7 +2,7 @@ import * as chatgpt from "./bots/chatgpt.ts";
 // import * as bing_chat from "./bots/bing_chat.ts";
 import * as gpt4 from "./bots/gpt_4.ts";
 import * as gpt4_v from "./bots/gpt_4_vision.ts";
-// import * as palm from "./bots/palm.ts";
+import * as gemini from "./bots/gemini.ts";
 import * as openrouter from "./bots/openrouter.ts";
 
 import * as types from "./bots/types.ts";
@@ -14,6 +14,11 @@ type messagedata = {
 
 type gptresponse = {
   oaires: types.Response;
+  messages: types.Message[];
+};
+
+type geminiresponse = {
+  res: types.geminiResponse;
   messages: types.Message[];
 };
 
@@ -99,7 +104,7 @@ client.on("messageCreate", async (message) => {
       );
       error = true;
     } else if (
-      !llm.match(/^(chatgpt|bing|bard|gpt4|gpt4_v)$/g) &&
+      !llm.match(/^(chatgpt|bing|gemini|gpt4|gpt4_v)$/g) &&
       !llm.startsWith("openrouter^")
     ) {
       // current LLM is corrupt. notify user and reset
@@ -194,7 +199,7 @@ client.on("messageCreate", async (message) => {
 
     const msg = await message.reply("Sending message...");
 
-    let resp: gptresponse;
+    let resp: gptresponse | geminiresponse;
     if (llm.startsWith("openrouter^")) {
       const llm_real = llm.split("^");
 
@@ -392,6 +397,75 @@ client.on("messageCreate", async (message) => {
           message.content,
           message.author.id,
           images,
+        );
+
+        messages[curconv].messages = resp.messages;
+
+        await db.set(
+          ["users", message.author.id, "conversations", llm],
+          messages,
+        );
+
+        const messagechunks = splitStringIntoChunks(
+          resp.oaires.choices[0].message.content,
+          2000,
+        );
+
+        let cvalue = 0;
+
+        messagechunks.forEach((chunk) => {
+          if (cvalue === 0) {
+            cvalue = 1;
+            isMessageProcessing = false;
+
+            db.set(
+              ["users", message.author.id, "messageWaiting"],
+              isMessageProcessing,
+            );
+            msg.edit(chunk);
+          } else {
+            message.reply(chunk);
+          }
+        });
+      } catch (err) {
+        isMessageProcessing = false;
+
+        db.set(
+          ["users", message.author.id, "messageWaiting"],
+          isMessageProcessing,
+        );
+        msg.edit(
+          "Something went catastrophically wrong! Please tell the bot host to check the logs, thaaaaanks",
+        );
+        console.error(
+          "hey dumbass this error got thrown, go check that thanks:",
+          err,
+        );
+        return;
+      }
+    } else if (llm === "gemini") {
+      const images: string[] = [];
+
+      message.attachments.forEach((image) => {
+        images.push(image.url);
+      });
+
+      message.stickers.forEach((image) => {
+        images.push(image.url);
+      });
+
+      if (!gpt4.isEnabled) {
+        msg.edit(
+          "This LLM isn't enabled! Please switch to a different LLM to use this bot.",
+        );
+        return;
+      }
+
+      try {
+        resp = await gemini.send(
+          curmsgs,
+          message.content,
+          // images,
         );
 
         messages[curconv].messages = resp.messages;
