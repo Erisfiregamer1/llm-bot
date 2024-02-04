@@ -26,7 +26,7 @@ import "./slashcode.ts";
 
 import client from "./client.ts";
 
-import { ChannelType } from "npm:discord.js";
+import { ChannelType, Message } from "npm:discord.js";
 
 const db = await Deno.openKv("./db.sqlite");
 
@@ -83,6 +83,47 @@ New database example:
   },
 }
 */
+
+const getImagesFromMessage = async (message: Message<boolean>) => {
+  const images: string[] = [];
+
+  // Process attachments
+  message.attachments.forEach((image) => {
+    images.push(image.url);
+  });
+
+  // Process URLs in message content
+  const regx = message.content.match(/\b((?:[a-z][\w-]+:(?:\/{1,3}|[a-z0-9%])|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}\/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'".,<>?«»“”‘’]))/ig);
+
+  if (regx) {
+    // Use Promise.all to wait for all asynchronous operations to complete
+    const resultArray = await Promise.all(regx.map(async (link) => {
+      const aeiou = await fetch(link);
+      const isImage = aeiou.headers.get('Content-Type')?.startsWith("image/");
+      if (isImage) {
+        console.log(link);
+        message.content.replace(link, "");
+        return link;
+      }
+      return null;
+    }));
+
+    const filteredImages: string[] = []
+    
+    resultArray.forEach((link) => {
+      if (link !== null) filteredImages.push(link)
+    });
+    
+    images.push(...filteredImages);
+  }
+
+  // Process stickers
+  message.stickers.forEach((sticker) => {
+    images.push(sticker.url);
+  });
+
+  return images;
+};
 
 client.on("messageCreate", async (message) => {
   if (message.author.bot || JSON.stringify(message.flags) === "4096") return; // The "4096" flag is the @silent flag on discord.
@@ -374,27 +415,7 @@ client.on("messageCreate", async (message) => {
         return;
       }
     } else if (llm === "gpt4_v") {
-      const images: string[] = [];
-
-      message.attachments.forEach((image) => {
-        images.push(image.url);
-      });
-
-      const regx = message.content.match(/(http|ftp|https):\/\/([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:\/~+#-]*[\w@?^=%&\/~+#-])/)
-
-      regx?.forEach(async (link) => {
-        const aeiou = await fetch(link)
-        const isImage = aeiou.headers.get('Content-Type')?.startsWith("image/")
-        console.log(isImage)
-        if (isImage) {
-          message.content.replace(link, "")
-          images.push(link)
-        } 
-      })
-
-      message.stickers.forEach((image) => {
-        images.push(image.url);
-      });
+      const images: string[] = await getImagesFromMessage(message)
 
       if (!gpt4.isEnabled) {
         msg.edit(
@@ -456,27 +477,7 @@ client.on("messageCreate", async (message) => {
         return;
       }
     } else if (llm === "gemini") {
-      const images: string[] = [];
-
-      message.attachments.forEach((image) => {
-        images.push(image.url);
-      });
-
-      const regx = message.content.match(/(http|ftp|https):\/\/([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:\/~+#-]*[\w@?^=%&\/~+#-])/)
-
-      regx?.forEach(async (link) => {
-        const aeiou = await fetch(link)
-        const isImage = aeiou.headers.get('Content-Type')?.startsWith("image/")
-        console.log(isImage)
-        if (isImage) {
-          message.content.replace(link, "")
-          images.push(link)
-        } 
-      })
-
-      message.stickers.forEach((image) => {
-        images.push(image.url);
-      });
+      const images: string[] = await getImagesFromMessage(message)
 
       if (!gemini.isEnabled) {
         msg.edit(

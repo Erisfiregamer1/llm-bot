@@ -109,6 +109,8 @@ export async function send(
 
   let useImageModel = false;
 
+  console.log(useImageModel)
+
 // Check if any object has the specified property set to the target value
 for (let i = 0; i < messages.length; i++) {
   if (messages[i].role === "image") {
