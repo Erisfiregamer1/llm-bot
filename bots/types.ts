@@ -135,12 +135,19 @@ type GeminiSafetyRating = {
   probability: "NEGLIGIBLE";
 };
 
-type GeminiContentPart = {
+export type GeminiContentPartText = {
   text: string;
 };
 
+export type GeminiContentPartImage = {
+  inlineData: {
+  mimeType: string;
+  data: string;
+  }
+}
+
 type GeminiContent = {
-  parts: GeminiContentPart[];
+  parts: GeminiContentPartText[]
   role: string;
 };
 

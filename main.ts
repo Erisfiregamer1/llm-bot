@@ -19,8 +19,8 @@ type gptresponse = {
 
 type geminiresponse = {
   res: types.geminiResponse;
-  messages: types.Message[];
-};
+  messages: types.Message[]
+}
 
 import "./slashcode.ts";
 
@@ -380,6 +380,18 @@ client.on("messageCreate", async (message) => {
         images.push(image.url);
       });
 
+      const regx = message.content.match(/(http|ftp|https):\/\/([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:\/~+#-]*[\w@?^=%&\/~+#-])/)
+
+      regx?.forEach(async (link) => {
+        const aeiou = await fetch(link)
+        const isImage = aeiou.headers.get('Content-Type')?.startsWith("image/")
+        console.log(isImage)
+        if (isImage) {
+          message.content.replace(link, "")
+          images.push(link)
+        } 
+      })
+
       message.stickers.forEach((image) => {
         images.push(image.url);
       });
@@ -450,22 +462,36 @@ client.on("messageCreate", async (message) => {
         images.push(image.url);
       });
 
+      const regx = message.content.match(/(http|ftp|https):\/\/([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:\/~+#-]*[\w@?^=%&\/~+#-])/)
+
+      regx?.forEach(async (link) => {
+        const aeiou = await fetch(link)
+        const isImage = aeiou.headers.get('Content-Type')?.startsWith("image/")
+        console.log(isImage)
+        if (isImage) {
+          message.content.replace(link, "")
+          images.push(link)
+        } 
+      })
+
       message.stickers.forEach((image) => {
         images.push(image.url);
       });
 
-      if (!gpt4.isEnabled) {
+      if (!gemini.isEnabled) {
         msg.edit(
           "This LLM isn't enabled! Please switch to a different LLM to use this bot.",
         );
         return;
       }
 
+      console.log(images)
+
       try {
         resp = await gemini.send(
           curmsgs,
           message.content,
-          // images,
+          images,
         );
 
         messages[curconv].messages = resp.messages;
@@ -476,7 +502,7 @@ client.on("messageCreate", async (message) => {
         );
 
         const messagechunks = splitStringIntoChunks(
-          resp.oaires.choices[0].message.content,
+          resp.res.candidates[0].content.parts[0].text,
           2000,
         );
 
@@ -515,6 +541,6 @@ client.on("messageCreate", async (message) => {
     } else {
       msg.edit("No handler for this LLM! Switch to a different one.");
       return;
-    }
+    } 
   }
 });
