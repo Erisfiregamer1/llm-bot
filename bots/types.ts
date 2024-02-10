@@ -141,13 +141,13 @@ export type GeminiContentPartText = {
 
 export type GeminiContentPartImage = {
   inlineData: {
-  mimeType: string;
-  data: string;
-  }
-}
+    mimeType: string;
+    data: string;
+  };
+};
 
 type GeminiContent = {
-  parts: GeminiContentPartText[]
+  parts: GeminiContentPartText[];
   role: string;
 };
 

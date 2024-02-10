@@ -19,14 +19,14 @@ type gptresponse = {
 
 type geminiresponse = {
   res: types.geminiResponse;
-  messages: types.Message[]
-}
+  messages: types.Message[];
+};
 
 import "./slashcode.ts";
 
 import client from "./client.ts";
 
-import { ChannelType, Message } from "npm:discord.js";
+import { AnyThreadChannel, ChannelType, Message } from "npm:discord.js";
 
 const db = await Deno.openKv("./db.sqlite");
 
@@ -93,13 +93,15 @@ const getImagesFromMessage = async (message: Message<boolean>) => {
   });
 
   // Process URLs in message content
-  const regx = message.content.match(/\b((?:[a-z][\w-]+:(?:\/{1,3}|[a-z0-9%])|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}\/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'".,<>?«»“”‘’]))/ig);
+  const regx = message.content.match(
+    /\b((?:[a-z][\w-]+:(?:\/{1,3}|[a-z0-9%])|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}\/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'".,<>?«»“”‘’]))/ig,
+  );
 
   if (regx) {
     // Use Promise.all to wait for all asynchronous operations to complete
     const resultArray = await Promise.all(regx.map(async (link) => {
       const aeiou = await fetch(link);
-      const isImage = aeiou.headers.get('Content-Type')?.startsWith("image/");
+      const isImage = aeiou.headers.get("Content-Type")?.startsWith("image/");
       if (isImage) {
         console.log(link);
         message.content.replace(link, "");
@@ -108,12 +110,12 @@ const getImagesFromMessage = async (message: Message<boolean>) => {
       return null;
     }));
 
-    const filteredImages: string[] = []
-    
+    const filteredImages: string[] = [];
+
     resultArray.forEach((link) => {
-      if (link !== null) filteredImages.push(link)
+      if (link !== null) filteredImages.push(link);
     });
-    
+
     images.push(...filteredImages);
   }
 
@@ -198,10 +200,11 @@ client.on("messageCreate", async (message) => {
         await message.reply(
           "Started conversation! Use /wipe to reset this conversation.",
         );
+        error = true
       }
     }
 
-    let messages;
+    let messages: messagedata[];
 
     if (llm.startsWith("openrouter^")) {
       const llm_real = llm.split("^");
@@ -212,14 +215,14 @@ client.on("messageCreate", async (message) => {
         "conversations",
         "openrouter",
         llm_real[llm_real.length - 1],
-      ])).value;
+      ])).value!;
     } else {
       messages = (await db.get<messagedata[]>([
         "users",
         message.author.id,
         "conversations",
         llm,
-      ])).value;
+      ])).value!;
     }
 
     if (messages === null) {
@@ -302,43 +305,52 @@ client.on("messageCreate", async (message) => {
         return;
       }
 
-      try {
-        resp = await chatgpt.send(
-          curmsgs,
-          message.content,
-          message.author.id,
-        );
+      let thread: AnyThreadChannel<boolean>;
 
-        messages[curconv].messages = resp.messages;
+      let useThread = false
 
-        console.log(resp.messages);
+      // deno-lint-ignore no-inner-declarations
+      async function cbfunction(type: string, resp: types.Response) {
+        console.log(resp)
+        if (type === "function") {
 
-        await db.set(
-          ["users", message.author.id, "conversations", llm],
-          messages,
-        );
+          if (!useThread) {
+          useThread = true
 
-        const messagechunks = splitStringIntoChunks(
-          resp.oaires.choices[0].message.content,
-          2000,
-        );
+          thread = await msg.startThread({
+            name: crypto.randomUUID()
+          })
 
-        let cvalue = 0;
+          msg.edit("Check the thread for the bot's response!")
 
-        messagechunks.forEach((chunk) => {
-          if (cvalue === 0) {
-            cvalue = 1;
-            isMessageProcessing = false;
+        }
+
+        console.log(resp.choices[0].message.content)
+
+          thread.send(`${(resp.choices[0].message.content !== null) ? `${resp.choices[0].message.content}\n[used function "${resp.choices[0].message.tool_calls![0].function.name}"]\n` : `[used function "${resp.choices[0].message.tool_calls![0].function.name}"]\n`}`)
+        } else if (type === "complete") {
+          if (useThread === true) {
+            thread.send(resp.choices[0].message.content!)
+          } else {
+            msg.edit(resp.choices[0].message.content!)
+          }
+
+          isMessageProcessing = false;
 
             db.set(
               ["users", message.author.id, "messageWaiting"],
               isMessageProcessing,
             );
-            msg.edit(chunk);
-          } else {
-            message.reply(chunk);
-          }
-        });
+        }
+      }
+
+      try {
+        await chatgpt.send(
+          curmsgs,
+          message.content,
+          message.author.id,
+          cbfunction,
+        );
       } catch (err) {
         isMessageProcessing = false;
 
@@ -415,7 +427,7 @@ client.on("messageCreate", async (message) => {
         return;
       }
     } else if (llm === "gpt4_v") {
-      const images: string[] = await getImagesFromMessage(message)
+      const images: string[] = await getImagesFromMessage(message);
 
       if (!gpt4.isEnabled) {
         msg.edit(
@@ -477,7 +489,7 @@ client.on("messageCreate", async (message) => {
         return;
       }
     } else if (llm === "gemini") {
-      const images: string[] = await getImagesFromMessage(message)
+      const images: string[] = await getImagesFromMessage(message);
 
       if (!gemini.isEnabled) {
         msg.edit(
@@ -486,7 +498,7 @@ client.on("messageCreate", async (message) => {
         return;
       }
 
-      console.log(images)
+      console.log(images);
 
       try {
         resp = await gemini.send(
@@ -542,6 +554,6 @@ client.on("messageCreate", async (message) => {
     } else {
       msg.edit("No handler for this LLM! Switch to a different one.");
       return;
-    } 
+    }
   }
 });

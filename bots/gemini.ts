@@ -16,7 +16,9 @@ type response = {
 
 // const db = await Deno.openKv("./db.sqlite")
 
-async function processGeminiMessages(messages: types.Message[]): Promise<(types.GeminiContentPartImage | types.GeminiContentPartText)[]> {
+async function processGeminiMessages(
+  messages: types.Message[],
+): Promise<(types.GeminiContentPartImage | types.GeminiContentPartText)[]> {
   const geminiFormattedMessages = [];
 
   for (const message of messages) {
@@ -47,7 +49,7 @@ async function getImageData(url: string) {
   try {
     const response = await fetch(url);
 
-    const contentType = response.headers.get('Content-Type');
+    const contentType = response.headers.get("Content-Type");
 
     const blob = await response.blob();
 
@@ -63,20 +65,20 @@ async function getImageData(url: string) {
 
     // Step 6: Get the base64-encoded image data
 
-    const resultString = reader.result as string
+    const resultString = reader.result as string;
 
-    const base64ImageData = resultString.split(',')[1];
+    const base64ImageData = resultString.split(",")[1];
 
     return { contentType, base64ImageData };
   } catch (error) {
-    console.error('Error:', error);
+    console.error("Error:", error);
   }
 }
 
 export async function send(
   messages: types.Message[],
   prompt: string | null,
-  images: string[]
+  images: string[],
 ): Promise<response> {
   // here we go
 
@@ -102,26 +104,26 @@ export async function send(
   images.forEach((image) => {
     messages.push({
       role: "image",
-      content: image
-    })
-  })
-
+      content: image,
+    });
+  });
 
   let useImageModel = false;
 
-  console.log(useImageModel)
+  console.log(useImageModel);
 
-// Check if any object has the specified property set to the target value
-for (let i = 0; i < messages.length; i++) {
-  if (messages[i].role === "image") {
-    useImageModel = true;
-    break; // Stop the loop since we found a match
+  // Check if any object has the specified property set to the target value
+  for (let i = 0; i < messages.length; i++) {
+    if (messages[i].role === "image") {
+      useImageModel = true;
+      break; // Stop the loop since we found a match
+    }
   }
-}
 
-  let geminiFormattedMessages: (types.GeminiContentPartText | types.GeminiContentPartImage)[] = [];
+  let geminiFormattedMessages:
+    (types.GeminiContentPartText | types.GeminiContentPartImage)[] = [];
 
-  geminiFormattedMessages = await processGeminiMessages(messages)
+  geminiFormattedMessages = await processGeminiMessages(messages);
 
   // Gemini message system is a motherfucker and I hate it but we gotta deal with it. Messages look like this:
 
@@ -135,9 +137,9 @@ for (let i = 0; i < messages.length; i++) {
   */
 
   const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${useImageModel === true ? 'gemini-pro-vision' : 'gemini-pro'}:generateContent?key=${
-      Deno.env.get("GEMINI_API_KEY")
-    }`,
+    `https://generativelanguage.googleapis.com/v1beta/models/${
+      useImageModel === true ? "gemini-pro-vision" : "gemini-pro"
+    }:generateContent?key=${Deno.env.get("GEMINI_API_KEY")}`,
     {
       method: "POST",
       headers: {

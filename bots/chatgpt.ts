@@ -4,6 +4,8 @@ import * as types from "./types.ts";
 
 import * as vdb from "../vdb.ts";
 
+import { safeEval } from "../lib/eval.ts";
+
 if (!Deno.env.get("OPENAI_API_KEY")) {
   console.warn("No OpenAI API key provided! ChatGPT will be unavailable.");
   isEnabled = false;
@@ -33,12 +35,30 @@ const tools: types.Tool[] = [{
       required: ["query"],
     },
   },
+}, {
+  type: "function",
+  function: {
+    name: "eval",
+    description:
+      "Evaluates JS code within a heavily limited sandbox (a worker with no access other then network). Times out after 10 seconds.",
+    parameters: {
+      type: "object",
+      properties: {
+        code: {
+          type: "string",
+          description: "Code to be evaluated",
+        },
+      },
+      required: ["code"],
+    },
+  },
 }];
 
 async function doTools(
   oaires: types.Response,
   messages: types.Message[],
-): Promise<response> {
+  callback: Function,
+): Promise<types.Response> {
   if (oaires.choices[0].finish_reason !== "tool_calls") {
     throw "What The Shit?";
   }
@@ -54,6 +74,13 @@ async function doTools(
       return {
         role: "tool",
         content: databaseResponse,
+        tool_call_id: tool.id,
+      };
+    } else if (tool.function.name === "eval") {
+      const respons = await safeEval(JSON.parse(tool.function.arguments).code);
+      return {
+        role: "tool",
+        content: respons,
         tool_call_id: tool.id,
       };
     } else {
@@ -72,9 +99,7 @@ async function doTools(
     messages.push(result);
   });
 
-  const newres = await send(messages, null, "tool_res");
-
-  console.log(newres);
+  const newres = await send(messages, null, "tool_res", callback);
 
   return newres;
 }
@@ -83,7 +108,8 @@ export async function send(
   messages: types.Message[],
   prompt: string | null,
   userid: string,
-): Promise<response> {
+  callback: Function,
+): Promise<types.Response> {
   // here we go
 
   if (!isEnabled) {
@@ -93,7 +119,7 @@ export async function send(
   if (messages.length === 0) {
     messages.push({
       role: "system",
-      content: "You are ChatGPT, an LLM by OpenAI.",
+      content: "You are ChatGPT, an LLM by OpenAI. You are running through a Discord bot named LLM Bot, by Eris.",
     });
   }
 
@@ -103,8 +129,6 @@ export async function send(
       content: prompt,
     });
   }
-
-  console.log(messages);
 
   const res = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
@@ -127,15 +151,18 @@ export async function send(
     throw resp.error.message; // well at least they know why the fuck it crashed??
   }
 
-  let finalresp: response = {
-    oaires: resp,
-    messages,
-  };
+  let finalresp = resp
 
   messages.push(resp.choices[0].message);
 
   if (resp.choices[0].finish_reason === "tool_calls") {
-    finalresp = await doTools(resp, messages);
+    callback("function", resp);
+
+    finalresp = await doTools(resp, messages, callback);
+  } else {
+
+  callback("complete", finalresp)
+
   }
 
   return finalresp;
