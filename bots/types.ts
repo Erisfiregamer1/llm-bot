@@ -166,3 +166,9 @@ export type geminiResponse = {
   candidates: GeminiCandidate[];
   promptFeedback: GeminiPromptFeedback;
 };
+
+export type Values = {
+  env: {
+    [envValue: string]: string;
+  };
+};

@@ -57,7 +57,7 @@ const tools: types.Tool[] = [{
 async function doTools(
   oaires: types.Response,
   messages: types.Message[],
-  callback: Function,
+  callback: (type: string, data: types.Response) => void,
 ): Promise<types.Response> {
   if (oaires.choices[0].finish_reason !== "tool_calls") {
     throw "What The Shit?";
@@ -108,7 +108,7 @@ export async function send(
   messages: types.Message[],
   prompt: string | null,
   userid: string,
-  callback: Function,
+  callback: (type: string, data: types.Response) => void,
 ): Promise<types.Response> {
   // here we go
 
@@ -119,7 +119,8 @@ export async function send(
   if (messages.length === 0) {
     messages.push({
       role: "system",
-      content: "You are ChatGPT, an LLM by OpenAI. You are running through a Discord bot named LLM Bot, by Eris.",
+      content:
+        "You are ChatGPT, an LLM by OpenAI. You are running through a Discord bot named LLM Bot, by Eris.",
     });
   }
 
@@ -151,7 +152,7 @@ export async function send(
     throw resp.error.message; // well at least they know why the fuck it crashed??
   }
 
-  let finalresp = resp
+  let finalresp = resp;
 
   messages.push(resp.choices[0].message);
 
@@ -160,9 +161,7 @@ export async function send(
 
     finalresp = await doTools(resp, messages, callback);
   } else {
-
-  callback("complete", finalresp)
-
+    callback("complete", finalresp);
   }
 
   return finalresp;

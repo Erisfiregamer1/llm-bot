@@ -138,7 +138,7 @@ export async function send(
 
   const res = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${
-      useImageModel === true ? "gemini-pro-vision" : "gemini-pro"
+      useImageModel === true ? "gemini-1.0-pro-vision" : "gemini-1.0-pro"
     }:generateContent?key=${Deno.env.get("GEMINI_API_KEY")}`,
     {
       method: "POST",

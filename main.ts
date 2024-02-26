@@ -3,7 +3,7 @@ import * as chatgpt from "./bots/chatgpt.ts";
 import * as gpt4 from "./bots/gpt_4.ts";
 import * as gpt4_v from "./bots/gpt_4_vision.ts";
 import * as gemini from "./bots/gemini.ts";
-import * as openrouter from "./bots/openrouter.ts";
+import * as mixtral from "./bots/mixtral.ts";
 
 import * as types from "./bots/types.ts";
 
@@ -68,16 +68,7 @@ New database example:
             id: "completion-37",
             messages: [{}] // Alan, insert message object every time you finish here. Wait, Alan, are you still on the team?
           }
-        ],
-        openrouter: {
-          api_key: "whatever_the_fuck_it_is"
-          llama2: [
-            {
-              id: "completion-37",
-              messages: [{}] // Alan, insert message object every time you finish here. Wait, Alan, are you still on the team?
-            }
-          ]
-        }
+        ]
       }
     }
   },
@@ -147,8 +138,7 @@ client.on("messageCreate", async (message) => {
       );
       error = true;
     } else if (
-      !llm.match(/^(chatgpt|bing|gemini|gpt4|gpt4_v)$/g) &&
-      !llm.startsWith("openrouter^")
+      !llm.match(/^(chatgpt|bing|gemini|gpt4|gpt4_v|mixtral)$/g)
     ) {
       // current LLM is corrupt. notify user and reset
       llm = "gpt4";
@@ -200,30 +190,16 @@ client.on("messageCreate", async (message) => {
         await message.reply(
           "Started conversation! Use /wipe to reset this conversation.",
         );
-        error = true
+        error = true;
       }
     }
 
-    let messages: messagedata[];
-
-    if (llm.startsWith("openrouter^")) {
-      const llm_real = llm.split("^");
-
-      messages = (await db.get<messagedata[]>([
-        "users",
-        message.author.id,
-        "conversations",
-        "openrouter",
-        llm_real[llm_real.length - 1],
-      ])).value!;
-    } else {
-      messages = (await db.get<messagedata[]>([
-        "users",
-        message.author.id,
-        "conversations",
-        llm,
-      ])).value!;
-    }
+    let messages = (await db.get<messagedata[]>([
+      "users",
+      message.author.id,
+      "conversations",
+      llm,
+    ])).value!;
 
     if (messages === null) {
       // No conversations for this LLM.
@@ -244,60 +220,7 @@ client.on("messageCreate", async (message) => {
     const msg = await message.reply("Sending message...");
 
     let resp: gptresponse | geminiresponse;
-    if (llm.startsWith("openrouter^")) {
-      const llm_real = llm.split("^");
-
-      const api_key = (await db.get<string>([
-        "users",
-        message.author.id,
-        "conversations",
-        "openrouter",
-        "api_key",
-      ])).value!;
-
-      resp = await openrouter.send(
-        curmsgs,
-        message.content,
-        message.author.id,
-        llm_real[llm_real.length - 1],
-        api_key,
-      );
-
-      messages[curconv].messages = resp.messages;
-
-      await db.set(
-        [
-          "users",
-          message.author.id,
-          "conversations",
-          "openrouter",
-          llm_real[llm_real.length - 1],
-        ],
-        messages,
-      );
-
-      const messagechunks = splitStringIntoChunks(
-        resp.oaires.choices[0].message.content,
-        2000,
-      );
-
-      let cvalue = 0;
-
-      messagechunks.forEach((chunk) => {
-        if (cvalue === 0) {
-          cvalue = 1;
-          isMessageProcessing = false;
-
-          db.set(
-            ["users", message.author.id, "messageWaiting"],
-            isMessageProcessing,
-          );
-          msg.edit(chunk);
-        } else {
-          message.reply(chunk);
-        }
-      });
-    } else if (llm === "chatgpt") {
+    if (llm === "chatgpt") {
       if (!chatgpt.isEnabled) {
         msg.edit(
           "This LLM isn't enabled! Please switch to a different LLM to use this bot.",
@@ -307,40 +230,48 @@ client.on("messageCreate", async (message) => {
 
       let thread: AnyThreadChannel<boolean>;
 
-      let useThread = false
+      let useThread = false;
 
       // deno-lint-ignore no-inner-declarations
       async function cbfunction(type: string, resp: types.Response) {
-        console.log(resp)
+        console.log(resp);
         if (type === "function") {
-
           if (!useThread) {
-          useThread = true
+            useThread = true;
 
-          thread = await msg.startThread({
-            name: crypto.randomUUID()
-          })
+            thread = await msg.startThread({
+              name: crypto.randomUUID(),
+            });
 
-          msg.edit("Check the thread for the bot's response!")
+            msg.edit("Check the thread for the bot's response!");
+          }
 
-        }
+          console.log(resp.choices[0].message.content);
 
-        console.log(resp.choices[0].message.content)
-
-          thread.send(`${(resp.choices[0].message.content !== null) ? `${resp.choices[0].message.content}\n[used function "${resp.choices[0].message.tool_calls![0].function.name}"]\n` : `[used function "${resp.choices[0].message.tool_calls![0].function.name}"]\n`}`)
+          thread.send(
+            `${
+              (resp.choices[0].message.content !== null)
+                ? `${resp.choices[0].message.content}\n[used function "${
+                  resp.choices[0].message.tool_calls![0].function.name
+                }"]\n`
+                : `[used function "${
+                  resp.choices[0].message.tool_calls![0].function.name
+                }"]\n`
+            }`,
+          );
         } else if (type === "complete") {
           if (useThread === true) {
-            thread.send(resp.choices[0].message.content!)
+            thread.send(resp.choices[0].message.content!);
           } else {
-            msg.edit(resp.choices[0].message.content!)
+            msg.edit(resp.choices[0].message.content!);
           }
 
           isMessageProcessing = false;
 
-            db.set(
-              ["users", message.author.id, "messageWaiting"],
-              isMessageProcessing,
-            );
+          db.set(
+            ["users", message.author.id, "messageWaiting"],
+            isMessageProcessing,
+          );
         }
       }
 
@@ -535,6 +466,113 @@ client.on("messageCreate", async (message) => {
             message.reply(chunk);
           }
         });
+      } catch (err) {
+        isMessageProcessing = false;
+
+        db.set(
+          ["users", message.author.id, "messageWaiting"],
+          isMessageProcessing,
+        );
+        msg.edit(
+          "Something went catastrophically wrong! Please tell the bot host to check the logs, thaaaaanks",
+        );
+        console.error(
+          "hey dumbass this error got thrown, go check that thanks:",
+          err,
+        );
+        return;
+      }
+    } else if (llm === "mixtral") {
+      let thread: AnyThreadChannel<boolean>;
+
+      let useThread = false;
+
+      try {
+        await mixtral.send(
+          curmsgs,
+          message.content,
+          async (type: string, resp: types.Response) => {
+            console.log(resp);
+            if (type === "function") {
+              if (!useThread) {
+                useThread = true;
+
+                thread = await msg.startThread({
+                  name: crypto.randomUUID(),
+                });
+
+                msg.edit("Check the thread for the bot's response!");
+              }
+
+              console.log(resp.choices[0].message.content);
+
+              thread.send(
+                `${
+                  (resp.choices[0].message.content !== null)
+                    ? `${resp.choices[0].message.content}\n[used function "${
+                      resp.choices[0].message.tool_calls![0].function.name
+                    }"]\n`
+                    : `[used function "${
+                      resp.choices[0].message.tool_calls![0].function.name
+                    }"]\n`
+                }`,
+              );
+            } else if (type === "complete") {
+              if (useThread === true) {
+                const messagechunks = splitStringIntoChunks(
+                  resp.choices[0].message.content!,
+                  2000,
+                );
+
+                messagechunks.forEach((chunk) => {
+                  thread.send(chunk);
+                });
+
+                isMessageProcessing = false;
+
+                db.set(
+                  ["users", message.author.id, "messageWaiting"],
+                  isMessageProcessing,
+                );
+              } else {
+                const messagechunks = splitStringIntoChunks(
+                  resp.choices[0].message.content!,
+                  2000,
+                );
+
+                let cvalue = 0;
+
+                messagechunks.forEach((chunk) => {
+                  if (cvalue === 0) {
+                    cvalue = 1;
+                    msg.edit(chunk);
+                  } else {
+                    message.reply(chunk);
+                  }
+                });
+
+                isMessageProcessing = false;
+
+                db.set(
+                  ["users", message.author.id, "messageWaiting"],
+                  isMessageProcessing,
+                );
+              }
+
+              isMessageProcessing = false;
+
+              db.set(
+                ["users", message.author.id, "messageWaiting"],
+                isMessageProcessing,
+              );
+            }
+          },
+          {
+            env: {
+              GROQ_API_KEY: Deno.env.get("GROQ_API_KEY")!,
+            },
+          },
+        );
       } catch (err) {
         isMessageProcessing = false;
 

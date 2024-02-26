@@ -4,6 +4,7 @@ export function safeEval(code: string): Promise<string> {
       import.meta.resolve("./eval_worker.js"),
       {
         type: "module",
+        // @ts-ignore
         name,
         deno: {
           //@ts-ignore ignore the namespace annotation. Deno < 1.22 required this

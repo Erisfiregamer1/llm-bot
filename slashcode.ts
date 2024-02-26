@@ -161,11 +161,7 @@ command16.addStringOption((option) =>
     .setRequired(true)
 );
 
-const command17 = new SlashCommandBuilder();
-command17.setName("set-ai-openrouter");
-command17.setDescription("Select an OpenRouter AI");
-
-const botamt = 17;
+const botamt = 16;
 for (let i = 1; i - 1 < botamt; i++) {
   const commandname = "command" + i;
   commands.push(eval(commandname));
@@ -200,27 +196,6 @@ client.on("interactionCreate", async (interaction) => {
 
       console.log(llm);
 
-      await db.set(["users", interaction.user.id, "current_bot"], llm);
-
-      await interaction.reply({
-        content: `Set your LLM to \`${llm}\`!`,
-        ephemeral: true,
-      });
-    }
-  } else if (interaction.isModalSubmit()) {
-    if (interaction.customId === "set-ai-openrouter") {
-      const or_llm = interaction.fields.getTextInputValue("modelName");
-      const api_key = interaction.fields.getTextInputValue("apiKey");
-
-      const llm = `openrouter^${or_llm}`;
-
-      await db.set([
-        "users",
-        interaction.user.id,
-        "conversations",
-        "openrouter",
-        "api_key",
-      ], api_key);
       await db.set(["users", interaction.user.id, "current_bot"], llm);
 
       await interaction.reply({
@@ -327,10 +302,16 @@ client.on("interactionCreate", async (interaction) => {
       description: "GPT-4 but it can take vision inputs.",
     };
 
-    let gemini = {
+    const gemini = {
       label: `Gemini Pro`,
       value: "gemini",
       description: `Google's AI model, specifically their 2nd best.`,
+    };
+
+    const mixtral = {
+      label: `Mixtral 8x7b (32768)`,
+      value: "mixtral",
+      description: `Mistral's MoE model. Powered by Groq.`,
     };
 
     if (chatgptIsEnabled) options.push(chatgpt);
@@ -338,6 +319,7 @@ client.on("interactionCreate", async (interaction) => {
     if (gpt4IsEnabled) options.push(gpt4);
     if (gpt4vIsEnabled) options.push(gpt4_v);
     if (geminiIsEnabled) options.push(gemini);
+    options.push(mixtral);
 
     const select = new StringSelectMenuBuilder().setCustomId("set-ai")
       .setPlaceholder("Select an AI").addOptions(options);
@@ -424,34 +406,5 @@ client.on("interactionCreate", async (interaction) => {
         `Something went wrong making the images! All I know is the error was "${err}".`,
       );
     }
-  } else if (interaction.commandName === "set-ai-openrouter") {
-    const modal = new ModalBuilder()
-      .setCustomId("set-ai-openrouter")
-      .setTitle("Set your OpenRouter model");
-
-    const favoriteColorInput = new TextInputBuilder()
-      .setCustomId("modelName")
-      .setLabel("OpenRouter model")
-      .setStyle(TextInputStyle.Short);
-
-    const hobbiesInput = new TextInputBuilder()
-      .setCustomId("apiKey")
-      .setLabel("OpenRouter API key")
-      .setStyle(TextInputStyle.Short);
-
-    // An action row only holds one text input,
-    // so you need one action row per text input.
-    const firstActionRow = new ActionRowBuilder<
-      ModalActionRowComponentBuilder
-    >().addComponents(favoriteColorInput);
-    const secondActionRow = new ActionRowBuilder<
-      ModalActionRowComponentBuilder
-    >().addComponents(hobbiesInput);
-
-    // Add inputs to the modal
-    modal.addComponents(firstActionRow, secondActionRow);
-
-    // Show the modal to the user
-    await interaction.showModal(modal);
   }
 });
