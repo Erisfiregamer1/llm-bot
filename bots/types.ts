@@ -48,11 +48,30 @@ export type ImageContentPart = {
 
 export type ContentPart = TextContent | ImageContentPart;
 
+export type AnthropicTextContent = {
+  type: "text";
+  text: string;
+};
+
+export type AnthropicImageContentPart = {
+  type: "image";
+  source: {
+    type: "base64";
+    media_type: string;
+    data: string;
+  };
+};
+
+export type AnthropicContentPart =
+  | AnthropicTextContent
+  | AnthropicImageContentPart;
+
 export type Message = {
   role: string;
   content:
     | string
     | ContentPart[]
+    | AnthropicContentPart[]
     | null;
   name?: string;
   tool_call_id?: string;
@@ -119,7 +138,7 @@ export type ToolCall = {
 };
 
 export function isError(
-  value: Error | Response,
+  value: Error | Response | claudeResponse,
 ): value is Error {
   return "error" in value;
 }
@@ -170,5 +189,44 @@ export type geminiResponse = {
 export type Values = {
   env: {
     [envValue: string]: string;
+  };
+  images?: string[]; // PLEASE. VALIDATE THESE ARE IMAGE URLS WITH CONTENT. FOR THE LOVE OF GOD.
+};
+
+// GPT'd types probably stopped here
+
+export type llmFileResponse = {
+  resp: Response | geminiResponse | claudeResponse;
+  messages: Message[];
+};
+
+export type llmFileResponseGPT = {
+  resp: Response;
+  messages: Message[];
+};
+
+export type llmFileResponseGemini = {
+  resp: geminiResponse;
+  messages: Message[];
+};
+
+export type llmFileResponseClaude = {
+  resp: claudeResponse;
+  messages: Message[];
+};
+
+export type claudeResponse = {
+  content: Array<{
+    text: string;
+    type: string;
+  }>;
+  id: string;
+  model: string;
+  role: string;
+  stop_sequence: string;
+  type: string;
+  usage: {
+    input_tokens: number;
+    output_tokens: number;
   };
 };

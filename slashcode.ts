@@ -161,7 +161,13 @@ command16.addStringOption((option) =>
     .setRequired(true)
 );
 
-const botamt = 16;
+const command17 = new SlashCommandBuilder();
+command17.setName("oops");
+command17.setDescription(
+  "Bot crashed while sending a message? Use this to fix it.",
+);
+
+const botamt = 17;
 for (let i = 1; i - 1 < botamt; i++) {
   const commandname = "command" + i;
   commands.push(eval(commandname));
@@ -314,12 +320,19 @@ client.on("interactionCreate", async (interaction) => {
       description: `Mistral's MoE model. Powered by Groq.`,
     };
 
+    const claud3 = {
+      label: `Claude 3 (Opus)`,
+      value: "claude3",
+      description: `Current best model on the bot. Has image input.`,
+    };
+
     if (chatgptIsEnabled) options.push(chatgpt);
     if (bingIsEnabled) options.push(bing_chat);
     if (gpt4IsEnabled) options.push(gpt4);
     if (gpt4vIsEnabled) options.push(gpt4_v);
     if (geminiIsEnabled) options.push(gemini);
     options.push(mixtral);
+    options.push(claud3);
 
     const select = new StringSelectMenuBuilder().setCustomId("set-ai")
       .setPlaceholder("Select an AI").addOptions(options);
@@ -406,5 +419,48 @@ client.on("interactionCreate", async (interaction) => {
         `Something went wrong making the images! All I know is the error was "${err}".`,
       );
     }
+  } else if (interaction.commandName === "oops") {
+    const llm =
+      (await db.get<string>(["users", interaction.user.id, "current_bot"]))
+        .value; // After reading the typedocs I realized this is the cleaner way to do this
+    const curconv = (await db.get<number>([
+      "users",
+      interaction.user.id,
+      "current_conversation",
+    ])).value;
+
+    if (llm === null || curconv === null) {
+      await interaction.reply({
+        content: "Send a message before wiping your conversation!",
+        ephemeral: true,
+      });
+      return;
+    }
+
+    if (
+      (await db.get<boolean>([
+        "users",
+        interaction.user.id,
+        "messageWaiting",
+      ])).value == false
+    ) {
+      await interaction.reply({
+        content:
+          "You haven't sent a message yet or there's no message pending. I don't know what you want me to do here.",
+        ephemeral: true,
+      });
+      return
+    }
+
+    await db.set(
+      ["users", interaction.user.id, "messageWaiting"],
+      false,
+    );
+
+    await interaction.reply({
+      content:
+        `You should be able to send messages now. "${llm}" no longer thinks you're in a conversation.`,
+      ephemeral: true,
+    });
   }
 });

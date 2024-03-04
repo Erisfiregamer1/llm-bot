@@ -9,11 +9,6 @@ if (!Deno.env.get("OPENAI_API_KEY")) {
   isEnabled = false;
 }
 
-type response = {
-  oaires: types.Response;
-  messages: types.Message[];
-};
-
 // const db = await Deno.openKv("./db.sqlite")
 
 const tools: types.Tool[] = [{
@@ -36,14 +31,14 @@ const tools: types.Tool[] = [{
 }];
 
 async function doTools(
-  oaires: types.Response,
+  res: types.Response,
   messages: types.Message[],
-): Promise<response> {
-  if (oaires.choices[0].finish_reason !== "tool_calls") {
+): Promise<types.Response> {
+  if (res.choices[0].finish_reason !== "tool_calls") {
     throw "What The Shit?";
   }
 
-  const toolCalls = oaires.choices[0].message.tool_calls!;
+  const toolCalls = res.choices[0].message.tool_calls!;
 
   const promises = toolCalls.map(async (tool) => {
     if (tool.function.name === "use-database") {
@@ -74,16 +69,16 @@ async function doTools(
 
   const newres = await send(messages, null, "tool_res");
 
-  console.log(newres);
+  console.log(newres.resp);
 
-  return newres;
+  return newres.resp;
 }
 
 export async function send(
   messages: types.Message[],
   prompt: string | null,
   userid: string,
-): Promise<response> {
+): Promise<types.llmFileResponseGPT> {
   // here we go
 
   if (!isEnabled) {
@@ -113,30 +108,28 @@ export async function send(
       Authorization: `Bearer ${Deno.env.get("OPENAI_API_KEY")}`,
     },
     body: JSON.stringify({
-      model: "gpt-4-1106-preview",
+      model: "gpt-4-turbo-preview",
       messages: messages,
       user: userid,
       tools,
     }),
   });
 
-  const resp: types.Response | types.Error = await res.json();
+  let resp: types.Response | types.Error = await res.json();
 
   if (types.isError(resp)) {
     // Fuck.
     throw resp.error.message; // well at least they know why the fuck it crashed??
   }
 
-  let finalresp: response = {
-    oaires: resp,
-    messages,
-  };
-
   messages.push(resp.choices[0].message);
 
   if (resp.choices[0].finish_reason === "tool_calls") {
-    finalresp = await doTools(resp, messages);
+    resp = await doTools(resp, messages);
   }
 
-  return finalresp;
+  return {
+    resp,
+    messages,
+  };
 }

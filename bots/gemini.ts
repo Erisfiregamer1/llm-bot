@@ -2,17 +2,10 @@ export let isEnabled = true;
 
 import * as types from "./types.ts";
 
-import * as vdb from "../vdb.ts";
-
 if (!Deno.env.get("OPENAI_API_KEY")) {
   console.warn("No OpenAI API key provided! ChatGPT will be unavailable.");
   isEnabled = false;
 }
-
-type response = {
-  res: types.geminiResponse;
-  messages: types.Message[];
-};
 
 // const db = await Deno.openKv("./db.sqlite")
 
@@ -79,7 +72,7 @@ export async function send(
   messages: types.Message[],
   prompt: string | null,
   images: string[],
-): Promise<response> {
+): Promise<types.llmFileResponseGemini> {
   // here we go
 
   if (!isEnabled) {
@@ -187,10 +180,8 @@ export async function send(
     content: resp.candidates[0].content.parts[0].text,
   });
 
-  let finalResp = {
-    res: resp,
+  return {
+    resp,
     messages,
   };
-
-  return finalResp;
 }

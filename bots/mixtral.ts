@@ -4,16 +4,11 @@ export const requested_values = {
   env: ["GROQ_API_KEY"],
 };
 
-type response = {
-  oaires: types.Response;
-  messages: types.Message[];
-};
-
 // const db = await Deno.openKv("./db.sqlite")
 
 export async function send(
   messages: types.Message[],
-  prompt: string | null,
+  prompt: string,
   callback: (type: string, data: types.Response) => void,
   values: types.Values,
 ): Promise<types.Response> {
@@ -23,16 +18,14 @@ export async function send(
     messages.push({
       role: "system",
       content:
-        "You are ChatGPT, an LLM by OpenAI. You are running through a Discord bot named LLM Bot, by Eris.",
+        "You are Mixtral, an LLM by Mistral AI. You are running through a Discord bot named LLM Bot, by Eris.",
     });
   }
 
-  if (prompt !== null) {
-    messages.push({
-      role: "user",
-      content: prompt,
-    });
-  }
+  messages.push({
+    role: "user",
+    content: prompt,
+  });
 
   const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",

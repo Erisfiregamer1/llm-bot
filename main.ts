@@ -4,21 +4,12 @@ import * as gpt4 from "./bots/gpt_4.ts";
 import * as gpt4_v from "./bots/gpt_4_vision.ts";
 import * as gemini from "./bots/gemini.ts";
 import * as mixtral from "./bots/mixtral.ts";
+import * as claude3 from "./bots/claude_3.ts";
 
 import * as types from "./bots/types.ts";
 
 type messagedata = {
   id: string;
-  messages: types.Message[];
-};
-
-type gptresponse = {
-  oaires: types.Response;
-  messages: types.Message[];
-};
-
-type geminiresponse = {
-  res: types.geminiResponse;
   messages: types.Message[];
 };
 
@@ -85,14 +76,14 @@ const getImagesFromMessage = async (message: Message<boolean>) => {
 
   // Process URLs in message content
   const regx = message.content.match(
-    /\b((?:[a-z][\w-]+:(?:\/{1,3}|[a-z0-9%])|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}\/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'".,<>?«»“”‘’]))/ig,
+    /^(?:(?:(?:https?|ftp):)?\/\/)(?:\S+(?::\S*)?@)?(?:(?!(?:10|127)(?:\.\d{1,3}){3})(?!(?:169\.254|192\.168)(?:\.\d{1,3}){2})(?!172\.(?:1[6-9]|2\d|3[0-1])(?:\.\d{1,3}){2})(?:[1-9]\d?|1\d\d|2[01]\d|22[0-3])(?:\.(?:1?\d{1,2}|2[0-4]\d|25[0-5])){2}(?:\.(?:[1-9]\d?|1\d\d|2[0-4]\d|25[0-4]))|(?:(?:[a-z0-9\u00a1-\uffff][a-z0-9\u00a1-\uffff_-]{0,62})?[a-z0-9\u00a1-\uffff]\.)+(?:[a-z\u00a1-\uffff]{2,}\.?))(?::\d{2,5})?(?:[/?#]\S*)?$/i,
   );
 
   if (regx) {
     // Use Promise.all to wait for all asynchronous operations to complete
     const resultArray = await Promise.all(regx.map(async (link) => {
-      const aeiou = await fetch(link);
-      const isImage = aeiou.headers.get("Content-Type")?.startsWith("image/");
+      const isImage = (await fetch(link)).headers.get("Content-Type")
+        ?.startsWith("image/");
       if (isImage) {
         console.log(link);
         message.content.replace(link, "");
@@ -138,7 +129,7 @@ client.on("messageCreate", async (message) => {
       );
       error = true;
     } else if (
-      !llm.match(/^(chatgpt|bing|gemini|gpt4|gpt4_v|mixtral)$/g)
+      !llm.match(/^(chatgpt|bing|gemini|gpt4|gpt4_v|mixtral|claude3)$/g)
     ) {
       // current LLM is corrupt. notify user and reset
       llm = "gpt4";
@@ -219,7 +210,7 @@ client.on("messageCreate", async (message) => {
 
     const msg = await message.reply("Sending message...");
 
-    let resp: gptresponse | geminiresponse;
+    let resp: types.llmFileResponse;
     if (llm === "chatgpt") {
       if (!chatgpt.isEnabled) {
         msg.edit(
@@ -313,6 +304,8 @@ client.on("messageCreate", async (message) => {
           message.author.id,
         );
 
+        resp.resp = resp.resp as types.Response; // shut the fuck up TypeScript
+
         messages[curconv].messages = resp.messages;
 
         await db.set(
@@ -321,7 +314,7 @@ client.on("messageCreate", async (message) => {
         );
 
         const messagechunks = splitStringIntoChunks(
-          resp.oaires.choices[0].message.content,
+          resp.resp.choices[0].message.content,
           2000,
         );
 
@@ -375,6 +368,8 @@ client.on("messageCreate", async (message) => {
           images,
         );
 
+        resp.resp = resp.resp as types.Response; // shut the fuck up TypeScript
+
         messages[curconv].messages = resp.messages;
 
         await db.set(
@@ -383,7 +378,7 @@ client.on("messageCreate", async (message) => {
         );
 
         const messagechunks = splitStringIntoChunks(
-          resp.oaires.choices[0].message.content,
+          resp.resp.choices[0].message.content,
           2000,
         );
 
@@ -438,6 +433,8 @@ client.on("messageCreate", async (message) => {
           images,
         );
 
+        resp.resp = resp.resp as types.geminiResponse; // shut the fuck up TypeScript
+
         messages[curconv].messages = resp.messages;
 
         await db.set(
@@ -446,7 +443,7 @@ client.on("messageCreate", async (message) => {
         );
 
         const messagechunks = splitStringIntoChunks(
-          resp.res.candidates[0].content.parts[0].text,
+          resp.resp.candidates[0].content.parts[0].text,
           2000,
         );
 
@@ -571,6 +568,63 @@ client.on("messageCreate", async (message) => {
             env: {
               GROQ_API_KEY: Deno.env.get("GROQ_API_KEY")!,
             },
+          },
+        );
+      } catch (err) {
+        isMessageProcessing = false;
+
+        db.set(
+          ["users", message.author.id, "messageWaiting"],
+          isMessageProcessing,
+        );
+        msg.edit(
+          "Something went catastrophically wrong! Please tell the bot host to check the logs, thaaaaanks",
+        );
+        console.error(
+          "hey dumbass this error got thrown, go check that thanks:",
+          err,
+        );
+        return;
+      }
+    } else if (llm === "claude3") {
+      const images: string[] = await getImagesFromMessage(message);
+
+      try {
+        await claude3.send(
+          curmsgs,
+          message.content,
+          async (type: string, resp: types.llmFileResponseClaude) => {
+            console.log(resp);
+            if (type === "complete") {
+              const messagechunks = splitStringIntoChunks(
+                resp.resp.content[0].text!,
+                2000,
+              );
+
+              let cvalue = 0;
+
+              messagechunks.forEach((chunk) => {
+                if (cvalue === 0) {
+                  cvalue = 1;
+                  msg.edit(chunk);
+                } else {
+                  message.reply(chunk);
+                }
+              });
+
+              isMessageProcessing = false;
+
+              db.set(
+                ["users", message.author.id, "messageWaiting"],
+                isMessageProcessing,
+              );
+            }
+          },
+          {
+            env: {
+              ANTHROPIC_API_KEY: Deno.env.get("ANTHROPIC_API_KEY")!,
+            },
+            images,
           },
         );
       } catch (err) {

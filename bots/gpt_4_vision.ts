@@ -7,11 +7,6 @@ if (!Deno.env.get("OPENAI_API_KEY")) {
   isEnabled = false;
 }
 
-type response = {
-  oaires: types.Response;
-  messages: types.Message[];
-};
-
 // const db = await Deno.openKv("./db.sqlite")
 
 export async function send(
@@ -19,7 +14,7 @@ export async function send(
   prompt: string | null,
   userid: string,
   images: string[],
-): Promise<response> {
+): Promise<types.llmFileResponse> {
   // here we go
 
   if (!isEnabled) {
@@ -82,8 +77,8 @@ export async function send(
     throw resp.error.message; // well at least they know why the fuck it crashed??
   }
 
-  let finalresp: response = {
-    oaires: resp,
+  const finalresp = {
+    resp,
     messages,
   };
 

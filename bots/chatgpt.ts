@@ -10,12 +10,6 @@ if (!Deno.env.get("OPENAI_API_KEY")) {
   console.warn("No OpenAI API key provided! ChatGPT will be unavailable.");
   isEnabled = false;
 }
-
-type response = {
-  oaires: types.Response;
-  messages: types.Message[];
-};
-
 // const db = await Deno.openKv("./db.sqlite")
 
 const tools: types.Tool[] = [{
@@ -101,7 +95,7 @@ async function doTools(
 
   const newres = await send(messages, null, "tool_res", callback);
 
-  return newres;
+  return newres.resp;
 }
 
 export async function send(
@@ -109,7 +103,7 @@ export async function send(
   prompt: string | null,
   userid: string,
   callback: (type: string, data: types.Response) => void,
-): Promise<types.Response> {
+): Promise<types.llmFileResponseGPT> {
   // here we go
 
   if (!isEnabled) {
@@ -145,24 +139,25 @@ export async function send(
     }),
   });
 
-  const resp: types.Response | types.Error = await res.json();
+  let resp: types.Response | types.Error = await res.json();
 
   if (types.isError(resp)) {
     // Fuck.
     throw resp.error.message; // well at least they know why the fuck it crashed??
   }
 
-  let finalresp = resp;
-
   messages.push(resp.choices[0].message);
 
   if (resp.choices[0].finish_reason === "tool_calls") {
     callback("function", resp);
 
-    finalresp = await doTools(resp, messages, callback);
+    resp = await doTools(resp, messages, callback);
   } else {
-    callback("complete", finalresp);
+    callback("complete", resp);
   }
 
-  return finalresp;
+  return {
+    resp,
+    messages,
+  };
 }
