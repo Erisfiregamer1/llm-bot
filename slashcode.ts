@@ -31,13 +31,9 @@ import {
   ActionRowBuilder,
   ColorResolvable,
   EmbedBuilder,
-  ModalActionRowComponentBuilder,
-  ModalBuilder,
   PermissionFlagsBits,
   SlashCommandBuilder,
   StringSelectMenuBuilder,
-  TextInputBuilder,
-  TextInputStyle,
 } from "npm:discord.js";
 
 const commands: SlashCommandBuilder[] = [];

@@ -1,3 +1,5 @@
+/// <reference lib="deno.unstable" />
+
 import * as chatgpt from "./bots/chatgpt.ts";
 // import * as bing_chat from "./bots/bing_chat.ts";
 import * as gpt4 from "./bots/gpt_4.ts";
@@ -593,7 +595,7 @@ client.on("messageCreate", async (message) => {
         await claude3.send(
           curmsgs,
           message.content,
-          async (type: string, resp: types.llmFileResponseClaude) => {
+          (type: string, resp: types.llmFileResponseClaude) => {
             console.log(resp);
             if (type === "complete") {
               const messagechunks = splitStringIntoChunks(
