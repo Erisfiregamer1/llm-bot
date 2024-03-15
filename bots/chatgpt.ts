@@ -60,6 +60,8 @@ async function doTools(
   const toolCalls = oaires.choices[0].message.tool_calls!;
 
   const promises = toolCalls.map(async (tool) => {
+    try {
+
     if (tool.function.name === "use-database") {
       const databaseResponse = await vdb.getRelevantDocument(
         JSON.parse(tool.function.arguments).query,
@@ -84,7 +86,16 @@ async function doTools(
         tool_call_id: tool.id,
       };
     }
+  } catch (err) {
+    return {
+      role: "tool",
+      content: "Error occured processing tool!",
+      tool_call_id: tool.id,
+    };
+  }
   });
+
+
 
   // Use Promise.all to wait for all promises to resolve
   const results = await Promise.all(promises);
