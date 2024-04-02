@@ -1,25 +1,38 @@
 /// <reference lib="deno.unstable" />
 
-import * as chatgpt from "./bots/chatgpt.ts";
-// import * as bing_chat from "./bots/bing_chat.ts";
-import * as gpt4 from "./bots/gpt_4.ts";
-import * as gpt4_v from "./bots/gpt_4_vision.ts";
-import * as gemini from "./bots/gemini.ts";
-import * as mixtral from "./bots/mixtral.ts";
-import * as claude3 from "./bots/claude_3.ts";
+import * as types from "./main.d.ts";
 
-import * as types from "./bots/types.ts";
-
-type messagedata = {
+type messageData = {
   id: string;
   messages: types.Message[];
 };
 
-import "./slashcode.ts";
-
 import client from "./client.ts";
 
-import { AnyThreadChannel, ChannelType, Message } from "npm:discord.js";
+import { walk } from "https://deno.land/std@0.221.0/fs/mod.ts";
+
+import * as path from "https://deno.land/std@0.221.0/path/mod.ts";
+
+import importLLMFile from "./lib/importLLMFile.ts";
+
+for await (const entry of await walk("./bots")) {
+  if (entry.isFile && entry.name.endsWith(".ts")) {
+    await importLLMFile(
+      path.toFileUrl(path.resolve(`./${entry.path}`)).toString(),
+    );
+  }
+}
+
+console.log(
+  "Everything looks good!",
+  Object.keys(availableLLMs).length,
+  "LLMs were imported.",
+);
+
+
+await import("./slashcode.ts");
+
+import { ChannelType, Message } from "npm:discord.js";
 
 const db = await Deno.openKv("./db.sqlite");
 
@@ -119,27 +132,23 @@ client.on("messageCreate", async (message) => {
   ) {
     let error = false; // Tracks if we've already pestered the user with an error / message :\
 
-    let llm =
+    const llm =
       (await db.get<string>(["users", message.author.id, "current_bot"])).value; // After reading the typedocs I realized this is the cleaner way to do this
 
     if (llm === null) {
-      // They haven't used the bot before
-      llm = "gpt4";
-      await db.set(["users", message.author.id, "current_bot"], llm);
       await message.reply(
-        "Looks like this is your first time using this bot! Run /info to learn how to use the full potential of this bot.",
+        "Looks like this is your first time using this bot! Run /info to learn how to use the full potential of this bot, and set your desired LLM using /set-ai!",
       );
       error = true;
+      return
     } else if (
-      !llm.match(/^(chatgpt|bing|gemini|gpt4|gpt4_v|mixtral|claude3)$/g)
+      !Object.prototype.hasOwnProperty.call(availableLLMs, llm)
     ) {
-      // current LLM is corrupt. notify user and reset
-      llm = "gpt4";
-      await db.set(["users", message.author.id, "current_bot"], llm);
+      // current LLM is removed/corrupted
       await message.reply(
-        "Your current LLM is corrupted or removed! We've reset you to GPT4 for now.",
+        "Your current LLM is corrupted or removed! Set a new LLM at /set-ai!",
       );
-      error = true;
+      return
     }
 
     let isMessageProcessing = (await db.get<boolean>([
@@ -187,7 +196,7 @@ client.on("messageCreate", async (message) => {
       }
     }
 
-    let messages = (await db.get<messagedata[]>([
+    let messages = (await db.get<messageData[]>([
       "users",
       message.author.id,
       "conversations",
@@ -212,442 +221,81 @@ client.on("messageCreate", async (message) => {
 
     const msg = await message.reply("Sending message...");
 
-    let resp: types.llmFileResponse;
-    if (llm === "chatgpt") {
-      if (!chatgpt.isEnabled) {
-        msg.edit(
-          "This LLM isn't enabled! Please switch to a different LLM to use this bot.",
-        );
-        return;
-      }
+    const requirements = availableLLMs[llm].information
 
-      let thread: AnyThreadChannel<boolean>;
+    const reqobject: types.Requirements = {}
 
-      let useThread = false;
-
-      // deno-lint-ignore no-inner-declarations
-      async function cbfunction(type: string, resp: types.Response) {
-        console.log(resp);
-        if (type === "function") {
-          if (!useThread) {
-            useThread = true;
-
-            thread = await msg.startThread({
-              name: crypto.randomUUID(),
-            });
-
-            msg.edit("Check the thread for the bot's response!");
-          }
-
-          console.log(resp.choices[0].message.content);
-
-          thread.send(
-            `${
-              (resp.choices[0].message.content !== null)
-                ? `${resp.choices[0].message.content}\n[used function "${
-                  resp.choices[0].message.tool_calls![0].function.name
-                }"]\n`
-                : `[used function "${
-                  resp.choices[0].message.tool_calls![0].function.name
-                }"]\n`
-            }`,
-          );
-        } else if (type === "complete") {
-          if (useThread === true) {
-            thread.send(resp.choices[0].message.content!);
-          } else {
-            msg.edit(resp.choices[0].message.content!);
-          }
-
-          isMessageProcessing = false;
-
-          db.set(
-            ["users", message.author.id, "messageWaiting"],
-            isMessageProcessing,
-          );
-        }
-      }
-
-      try {
-        await chatgpt.send(
-          curmsgs,
-          message.content,
-          message.author.id,
-          cbfunction,
-        );
-      } catch (err) {
-        isMessageProcessing = false;
-
-        db.set(
-          ["users", message.author.id, "messageWaiting"],
-          isMessageProcessing,
-        );
-        msg.edit(
-          "Something went catastrophically wrong! Please tell the bot host to check the logs, thaaaaanks",
-        );
-        console.error(
-          "hey dumbass this error got thrown, go check that thanks:",
-          err,
-        );
-        return;
-      }
-    } else if (llm === "gpt4") {
-      if (!gpt4.isEnabled) {
-        msg.edit(
-          "This LLM isn't enabled! Please switch to a different LLM to use this bot.",
-        );
-        return;
-      }
-
-      try {
-        resp = await gpt4.send(
-          curmsgs,
-          message.content,
-          message.author.id,
-        );
-
-        resp.resp = resp.resp as types.Response; // shut the fuck up TypeScript
-
-        messages[curconv].messages = resp.messages;
-
-        await db.set(
-          ["users", message.author.id, "conversations", llm],
-          messages,
-        );
-
-        const messagechunks = splitStringIntoChunks(
-          resp.resp.choices[0].message.content,
-          2000,
-        );
-
-        let cvalue = 0;
-
-        messagechunks.forEach((chunk) => {
-          if (cvalue === 0) {
-            cvalue = 1;
-            isMessageProcessing = false;
-
-            db.set(
-              ["users", message.author.id, "messageWaiting"],
-              isMessageProcessing,
-            );
-            msg.edit(chunk);
-          } else {
-            message.reply(chunk);
-          }
-        });
-      } catch (err) {
-        isMessageProcessing = false;
-
-        db.set(
-          ["users", message.author.id, "messageWaiting"],
-          isMessageProcessing,
-        );
-        msg.edit(
-          "Something went catastrophically wrong! Please tell the bot host to check the logs, thaaaaanks",
-        );
-        console.error(
-          "hey dumbass this error got thrown, go check that thanks:",
-          err,
-        );
-        return;
-      }
-    } else if (llm === "gpt4_v") {
+    if (requirements.multiModal) {
       const images: string[] = await getImagesFromMessage(message);
 
-      if (!gpt4.isEnabled) {
-        msg.edit(
-          "This LLM isn't enabled! Please switch to a different LLM to use this bot.",
-        );
-        return;
-      }
-
-      try {
-        resp = await gpt4_v.send(
-          curmsgs,
-          message.content,
-          message.author.id,
-          images,
-        );
-
-        resp.resp = resp.resp as types.Response; // shut the fuck up TypeScript
-
-        messages[curconv].messages = resp.messages;
-
-        await db.set(
-          ["users", message.author.id, "conversations", llm],
-          messages,
-        );
-
-        const messagechunks = splitStringIntoChunks(
-          resp.resp.choices[0].message.content,
-          2000,
-        );
-
-        let cvalue = 0;
-
-        messagechunks.forEach((chunk) => {
-          if (cvalue === 0) {
-            cvalue = 1;
-            isMessageProcessing = false;
-
-            db.set(
-              ["users", message.author.id, "messageWaiting"],
-              isMessageProcessing,
-            );
-            msg.edit(chunk);
-          } else {
-            message.reply(chunk);
-          }
-        });
-      } catch (err) {
-        isMessageProcessing = false;
-
-        db.set(
-          ["users", message.author.id, "messageWaiting"],
-          isMessageProcessing,
-        );
-        msg.edit(
-          "Something went catastrophically wrong! Please tell the bot host to check the logs, thaaaaanks",
-        );
-        console.error(
-          "hey dumbass this error got thrown, go check that thanks:",
-          err,
-        );
-        return;
-      }
-    } else if (llm === "gemini") {
-      const images: string[] = await getImagesFromMessage(message);
-
-      if (!gemini.isEnabled) {
-        msg.edit(
-          "This LLM isn't enabled! Please switch to a different LLM to use this bot.",
-        );
-        return;
-      }
-
-      console.log(images);
-
-      try {
-        resp = await gemini.send(
-          curmsgs,
-          message.content,
-          images,
-        );
-
-        resp.resp = resp.resp as types.geminiResponse; // shut the fuck up TypeScript
-
-        messages[curconv].messages = resp.messages;
-
-        await db.set(
-          ["users", message.author.id, "conversations", llm],
-          messages,
-        );
-
-        const messagechunks = splitStringIntoChunks(
-          resp.resp.candidates[0].content.parts[0].text,
-          2000,
-        );
-
-        let cvalue = 0;
-
-        messagechunks.forEach((chunk) => {
-          if (cvalue === 0) {
-            cvalue = 1;
-            isMessageProcessing = false;
-
-            db.set(
-              ["users", message.author.id, "messageWaiting"],
-              isMessageProcessing,
-            );
-            msg.edit(chunk);
-          } else {
-            message.reply(chunk);
-          }
-        });
-      } catch (err) {
-        isMessageProcessing = false;
-
-        db.set(
-          ["users", message.author.id, "messageWaiting"],
-          isMessageProcessing,
-        );
-        msg.edit(
-          "Something went catastrophically wrong! Please tell the bot host to check the logs, thaaaaanks",
-        );
-        console.error(
-          "hey dumbass this error got thrown, go check that thanks:",
-          err,
-        );
-        return;
-      }
-    } else if (llm === "mixtral") {
-      let thread: AnyThreadChannel<boolean>;
-
-      let useThread = false;
-
-      try {
-        await mixtral.send(
-          curmsgs,
-          message.content,
-          async (type: string, resp: types.Response) => {
-            console.log(resp);
-            if (type === "function") {
-              if (!useThread) {
-                useThread = true;
-
-                thread = await msg.startThread({
-                  name: crypto.randomUUID(),
-                });
-
-                msg.edit("Check the thread for the bot's response!");
-              }
-
-              console.log(resp.choices[0].message.content);
-
-              thread.send(
-                `${
-                  (resp.choices[0].message.content !== null)
-                    ? `${resp.choices[0].message.content}\n[used function "${
-                      resp.choices[0].message.tool_calls![0].function.name
-                    }"]\n`
-                    : `[used function "${
-                      resp.choices[0].message.tool_calls![0].function.name
-                    }"]\n`
-                }`,
-              );
-            } else if (type === "complete") {
-              if (useThread === true) {
-                const messagechunks = splitStringIntoChunks(
-                  resp.choices[0].message.content!,
-                  2000,
-                );
-
-                messagechunks.forEach((chunk) => {
-                  thread.send(chunk);
-                });
-
-                isMessageProcessing = false;
-
-                db.set(
-                  ["users", message.author.id, "messageWaiting"],
-                  isMessageProcessing,
-                );
-              } else {
-                const messagechunks = splitStringIntoChunks(
-                  resp.choices[0].message.content!,
-                  2000,
-                );
-
-                let cvalue = 0;
-
-                messagechunks.forEach((chunk) => {
-                  if (cvalue === 0) {
-                    cvalue = 1;
-                    msg.edit(chunk);
-                  } else {
-                    message.reply(chunk);
-                  }
-                });
-
-                isMessageProcessing = false;
-
-                db.set(
-                  ["users", message.author.id, "messageWaiting"],
-                  isMessageProcessing,
-                );
-              }
-
-              isMessageProcessing = false;
-
-              db.set(
-                ["users", message.author.id, "messageWaiting"],
-                isMessageProcessing,
-              );
-            }
-          },
-          {
-            env: {
-              GROQ_API_KEY: Deno.env.get("GROQ_API_KEY")!,
-            },
-          },
-        );
-      } catch (err) {
-        isMessageProcessing = false;
-
-        db.set(
-          ["users", message.author.id, "messageWaiting"],
-          isMessageProcessing,
-        );
-        msg.edit(
-          "Something went catastrophically wrong! Please tell the bot host to check the logs, thaaaaanks",
-        );
-        console.error(
-          "hey dumbass this error got thrown, go check that thanks:",
-          err,
-        );
-        return;
-      }
-    } else if (llm === "claude3") {
-      const images: string[] = await getImagesFromMessage(message);
-
-      try {
-        await claude3.send(
-          curmsgs,
-          message.content,
-          (type: string, resp: types.llmFileResponseClaude) => {
-            console.log(resp);
-            if (type === "complete") {
-              const messagechunks = splitStringIntoChunks(
-                resp.resp.content[0].text!,
-                2000,
-              );
-
-              let cvalue = 0;
-
-              messagechunks.forEach((chunk) => {
-                if (cvalue === 0) {
-                  cvalue = 1;
-                  msg.edit(chunk);
-                } else {
-                  message.reply(chunk);
-                }
-              });
-
-              isMessageProcessing = false;
-
-              db.set(
-                ["users", message.author.id, "messageWaiting"],
-                isMessageProcessing,
-              );
-            }
-          },
-          {
-            env: {
-              ANTHROPIC_API_KEY: Deno.env.get("ANTHROPIC_API_KEY")!,
-            },
-            images,
-          },
-        );
-      } catch (err) {
-        isMessageProcessing = false;
-
-        db.set(
-          ["users", message.author.id, "messageWaiting"],
-          isMessageProcessing,
-        );
-        msg.edit(
-          "Something went catastrophically wrong! Please tell the bot host to check the logs, thaaaaanks",
-        );
-        console.error(
-          "hey dumbass this error got thrown, go check that thanks:",
-          err,
-        );
-        return;
-      }
-    } else {
-      msg.edit("No handler for this LLM! Switch to a different one.");
-      return;
+      reqobject.images = images
     }
+
+    if (requirements.env) {
+      reqobject.env = {}
+
+      requirements.env.forEach((envValue) => {
+        if (!Deno.env.get(envValue)) {
+          throw `Required env value "${envValue}" not found, add it to .env!`
+        }
+
+        reqobject.env![envValue] = Deno.env.get(envValue)!
+     })
+
+     reqobject.streaming = false // No.
+
+    }
+      try {
+        const resp = await availableLLMs[llm].send(
+          message.content,
+          curmsgs,
+          null,
+          reqobject
+        );
+
+        messages[curconv].messages = resp.messages;
+
+        await db.set(
+          ["users", message.author.id, "conversations", llm],
+          messages,
+        );
+
+        const messagechunks = splitStringIntoChunks(
+          resp.choices[0].message.content,
+          2000,
+        );
+
+        let cvalue = 0;
+
+        messagechunks.forEach((chunk) => {
+          if (cvalue === 0) {
+            cvalue = 1;
+            isMessageProcessing = false;
+
+            db.set(
+              ["users", message.author.id, "messageWaiting"],
+              isMessageProcessing,
+            );
+            msg.edit(chunk);
+          } else {
+            message.reply(chunk);
+          }
+        });
+      } catch (err) {
+        isMessageProcessing = false;
+
+        db.set(
+          ["users", message.author.id, "messageWaiting"],
+          isMessageProcessing,
+        );
+        msg.edit(
+          "Something went catastrophically wrong! Please tell the bot host to check the logs, thaaaaanks",
+        );
+        console.error(
+          "hey dumbass this error got thrown, go check that thanks:",
+          err,
+        );
+        return;
+      }
   }
 });

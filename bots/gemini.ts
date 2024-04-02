@@ -1,6 +1,6 @@
 export let isEnabled = true;
 
-import * as types from "./types.ts";
+import * as types from "../main.d.ts";
 
 if (!Deno.env.get("OPENAI_API_KEY")) {
   console.warn("No OpenAI API key provided! ChatGPT will be unavailable.");
@@ -46,7 +46,6 @@ async function getImageData(url: string) {
 
     const blob = await response.blob();
 
-    // Step 4: Read the Blob as Data URL
     const reader = new FileReader();
     reader.readAsDataURL(blob);
 

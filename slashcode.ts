@@ -1,21 +1,15 @@
 import client from "./client.ts";
 
+import * as types from "./main.d.ts"
+
 import { BingImageCreator } from "https://esm.sh/@timefox/bic-sydney@1.1.4";
 import crypto from "node:crypto";
 
-import { isEnabled as geminiIsEnabled } from "./bots/gemini.ts";
-import { isEnabled as chatgptIsEnabled } from "./bots/chatgpt.ts";
-import { isEnabled as bingIsEnabled } from "./bots/bing_chat.ts";
-import { isEnabled as gpt4IsEnabled } from "./bots/gpt_4.ts";
-import { isEnabled as gpt4vIsEnabled } from "./bots/gpt_4_vision.ts";
-
 console.log("Loading slash commands...");
 
-import OpenAI from "npm:openai";
-
-type messagedata = {
+type messageData = {
   id: string;
-  messages: OpenAI.Chat.ChatCompletionMessage[];
+  messages: types.Message[];
 };
 
 // import { addDocument } from "./vdb.ts";
@@ -128,42 +122,38 @@ command13.setName("get-image");
 command13.setDescription("Get an image that was made by Stable Diffusion.");
 
 const command14 = new SlashCommandBuilder();
-command14.setName("set-sydney-mode");
-command14.setDescription("Switch between the 4 modes for Sydney.");
-
-const command15 = new SlashCommandBuilder();
-command15.setName("add-document");
-command15.setDescription(
+command14.setName("add-document");
+command14.setDescription(
   "Add a document to this bot's information database (Powered by Supabase).",
 );
-command15.setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels);
-command15.addStringOption((option) =>
+command14.setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels);
+command14.addStringOption((option) =>
   option.setName("file-name").setDescription(
     "The name of the file for the vector database.",
   ).setRequired(true)
 );
-command15.addAttachmentOption((option) =>
+command14.addAttachmentOption((option) =>
   option.setName("file").setDescription("The file to be added to the database.")
     .setRequired(true)
 );
 
-const command16 = new SlashCommandBuilder();
-command16.setName("create-image-bingchat");
-command16.setDescription(
+const command15 = new SlashCommandBuilder();
+command15.setName("create-image-bingchat");
+command15.setDescription(
   "Create an image using DALL-E 3! (Powered by Bing Chat Image Maker)",
 );
-command16.addStringOption((option) =>
+command15.addStringOption((option) =>
   option.setName("prompt").setDescription("Prompt to be sent to DALL-E 3")
     .setRequired(true)
 );
 
-const command17 = new SlashCommandBuilder();
-command17.setName("oops");
-command17.setDescription(
+const command16 = new SlashCommandBuilder();
+command16.setName("oops");
+command16.setDescription(
   "Bot crashed while sending a message? Use this to fix it.",
 );
 
-const botamt = 17;
+const botamt = 16;
 for (let i = 1; i - 1 < botamt; i++) {
   const commandname = "command" + i;
   commands.push(eval(commandname));
@@ -195,8 +185,6 @@ client.on("interactionCreate", async (interaction) => {
   if (interaction.isStringSelectMenu()) {
     if (interaction.customId === "set-ai") {
       const llm = interaction.values[0];
-
-      console.log(llm);
 
       await db.set(["users", interaction.user.id, "current_bot"], llm);
 
@@ -238,7 +226,7 @@ client.on("interactionCreate", async (interaction) => {
       return;
     }
 
-    const messages = (await db.get<messagedata[]>([
+    const messages = (await db.get<messageData[]>([
       "users",
       interaction.user.id,
       "conversations",
@@ -280,55 +268,17 @@ client.on("interactionCreate", async (interaction) => {
   } else if (interaction.commandName === "set-ai") {
     const options = [];
 
-    const chatgpt = {
-      label: "ChatGPT",
-      value: "chatgpt",
-      description: "Default AI. Uses gpt-3.5-turbo. Highly reliable.",
-    };
+    for (const key in availableLLMs) {
+      const llm = availableLLMs[key]
 
-    const bing_chat = {
-      label: "Bing Chat",
-      value: "bing_chat",
-      description: "Slower. Can access the internet. Has daily use cap.",
-    };
+      options.push({
+        label: llm.information.name,
+        value: llm.information.id,
+        description: llm.information.description,
+      })
+    }
 
-    const gpt4 = {
-      label: "GPT-4",
-      value: "gpt4",
-      description: "Better version of ChatGPT. Has VDB access.",
-    };
-
-    const gpt4_v = {
-      label: "GPT-4 Vision",
-      value: "gpt4_v",
-      description: "GPT-4 but it can take vision inputs.",
-    };
-
-    const gemini = {
-      label: `Gemini Pro`,
-      value: "gemini",
-      description: `Google's AI model, specifically their 2nd best.`,
-    };
-
-    const mixtral = {
-      label: `Mixtral 8x7b (32768)`,
-      value: "mixtral",
-      description: `Mistral's MoE model. Powered by Groq.`,
-    };
-
-    const claud3 = {
-      label: `Claude 3 (Opus)`,
-      value: "claude3",
-      description: `Current best model on the bot. Has image input.`,
-    };
-
-    if (chatgptIsEnabled) options.push(chatgpt);
-    if (bingIsEnabled) options.push(bing_chat);
-    if (gpt4IsEnabled) options.push(gpt4);
-    if (gpt4vIsEnabled) options.push(gpt4_v);
-    if (geminiIsEnabled) options.push(gemini);
-    options.push(mixtral);
-    options.push(claud3);
+    if (options.length === 0) interaction.reply({content: "No available LLMs! Have the bot host check the logs.", ephemeral: true})
 
     const select = new StringSelectMenuBuilder().setCustomId("set-ai")
       .setPlaceholder("Select an AI").addOptions(options);
@@ -445,7 +395,7 @@ client.on("interactionCreate", async (interaction) => {
           "You haven't sent a message yet or there's no message pending. I don't know what you want me to do here.",
         ephemeral: true,
       });
-      return
+      return;
     }
 
     await db.set(

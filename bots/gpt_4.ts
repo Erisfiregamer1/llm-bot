@@ -1,38 +1,41 @@
-export let isEnabled = true;
-
-import * as types from "./types.ts";
-
-import * as vdb from "../vdb.ts";
-
-if (!Deno.env.get("OPENAI_API_KEY")) {
-  console.warn("No OpenAI API key provided! ChatGPT will be unavailable.");
-  isEnabled = false;
-}
-
-// const db = await Deno.openKv("./db.sqlite")
+import * as types from "../main.d.ts";
 
 const tools: types.Tool[] = [{
   type: "function",
   function: {
-    name: "use-database",
+    name: "sanitycheck",
     description:
-      "Check the Vector Database for information on a subject. Irrelevant data means no relevant data is available.",
+      "Returns true, as a sanity check to make sure function support is OK. If this fails, something's fucked.",
     parameters: {
       type: "object",
       properties: {
-        query: {
+        useless: {
           type: "string",
-          description: "Request to send to database",
+          description:
+            "You can put whatever here, it's not going to do anything.",
         },
       },
-      required: ["query"],
+      required: ["useless"],
     },
   },
 }];
 
+export const information = {
+  llmFileVersion: 1.0,
+  env: ["OPENAI_API_KEY"],
+  functions: true,
+  functionsData: tools,
+  multiModal: false,
+  callbackSupport: true,
+  streamingSupport: false,
+  id: "gpt4",
+  name: "GPT-4",
+  description:
+    "An upgraded version of ChatGPT (GPT-3.5). Much better at answering questions!",
+};
+
 async function doTools(
   res: types.Response,
-  messages: types.Message[],
 ): Promise<types.Response> {
   if (res.choices[0].finish_reason !== "tool_calls") {
     throw "What The Shit?";
@@ -40,15 +43,13 @@ async function doTools(
 
   const toolCalls = res.choices[0].message.tool_calls!;
 
+  // What if they happen to use it later?
+  // deno-lint-ignore require-await
   const promises = toolCalls.map(async (tool) => {
-    if (tool.function.name === "use-database") {
-      const databaseResponse = await vdb.getRelevantDocument(
-        JSON.parse(tool.function.arguments).query,
-      );
-
+    if (tool.function.name === "sanitycheck") {
       return {
         role: "tool",
-        content: databaseResponse,
+        content: "true",
         tool_call_id: tool.id,
       };
     } else {
@@ -56,6 +57,7 @@ async function doTools(
         role: "tool",
         content: "Unknown tool or not implemented",
         tool_call_id: tool.id,
+        //};
       };
     }
   });
@@ -64,25 +66,30 @@ async function doTools(
   const results = await Promise.all(promises);
 
   results.forEach((result) => {
-    messages.push(result);
+    res.messages.push(result);
   });
 
-  const newres = await send(messages, null, "tool_res");
+  const newres = await send("", res.messages);
 
-  console.log(newres.resp);
+  console.log(newres);
 
-  return newres.resp;
+  return newres;
 }
 
 export async function send(
-  messages: types.Message[],
   prompt: string | null,
-  userid: string,
-): Promise<types.llmFileResponseGPT> {
-  // here we go
+  messages: types.Message[],
+  callback?:
+    | ((information: types.callbackData, complete: boolean) => void)
+    | null,
+  requirements?: types.Requirements,
+): Promise<types.Response> {
+  if (!requirements?.env?.OPENAI_API_KEY) {
+    throw new DOMException("env.OPENAI_API_KEY", "NotFoundError");
+  }
 
-  if (!isEnabled) {
-    throw "not_enabled";
+  if (requirements.streaming) {
+    throw new DOMException("streaming", "NotSupportedError");
   }
 
   if (messages.length === 0) {
@@ -92,44 +99,48 @@ export async function send(
     });
   }
 
-  if (prompt !== null) {
+  if (prompt) {
     messages.push({
       role: "user",
       content: prompt,
     });
   }
 
-  console.log(messages);
-
   const res = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${Deno.env.get("OPENAI_API_KEY")}`,
+      Authorization: `Bearer ${requirements?.env.OPENAI_API_KEY}`,
     },
     body: JSON.stringify({
       model: "gpt-4-turbo-preview",
       messages: messages,
-      user: userid,
       tools,
     }),
   });
 
-  let resp: types.Response | types.Error = await res.json();
+  let resp: types.Response = await res.json();
 
-  if (types.isError(resp)) {
-    // Fuck.
-    throw resp.error.message; // well at least they know why the fuck it crashed??
+  if (resp.error) {
+    throw new DOMException(resp.error.message, "ExecutionError");
   }
 
   messages.push(resp.choices[0].message);
 
+  resp.messages = messages;
+
   if (resp.choices[0].finish_reason === "tool_calls") {
-    resp = await doTools(resp, messages);
+    if (callback) {
+      callback({
+        toolCalls: resp.choices[0].message.tool_calls,
+        data: resp.choices[0].message.content,
+      }, false);
+    }
+    resp = await doTools(resp);
+    resp.choices[0].message.content = resp.choices[0].message.content as string;
   }
 
-  return {
-    resp,
-    messages,
-  };
+  if (callback) callback({ data: resp.choices[0].message.content }, true);
+
+  return resp;
 }

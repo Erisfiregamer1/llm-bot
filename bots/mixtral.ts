@@ -1,17 +1,34 @@
-import * as types from "./types.ts";
+import * as types from "../main.d.ts";
 
-export const requested_values = {
+export const information = {
+  llmFileVersion: 1.0,
   env: ["GROQ_API_KEY"],
+  functions: false,
+  multiModal: false,
+  callbackSupport: true,
+  streamingSupport: false,
+  id: "mixtral-groq",
+  name: "Mixtral (Groq)",
+  description: "Mistral's MOE model. Powered by Groq!",
 };
 
 // const db = await Deno.openKv("./db.sqlite")
 
 export async function send(
+  prompt: string | null,
   messages: types.Message[],
-  prompt: string,
-  callback: (type: string, data: types.Response) => void,
-  values: types.Values,
+  callback?:
+    | ((information: types.callbackData, complete: boolean) => void)
+    | null,
+  requirements?: types.Requirements,
 ): Promise<types.Response> {
+  if (!requirements?.env?.GROQ_API_KEY) {
+    throw new DOMException("env.GROQ_API_KEY", "NotFoundError");
+  }
+
+  if (requirements.streaming) {
+    throw new DOMException("streaming", "NotSupportedError");
+  }
   // here we go
 
   if (messages.length === 0) {
@@ -31,7 +48,7 @@ export async function send(
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${values.env.GROQ_API_KEY}`,
+      Authorization: `Bearer ${requirements.env.GROQ_API_KEY}`,
     },
     body: JSON.stringify({
       model: "mixtral-8x7b-32768",
@@ -39,16 +56,18 @@ export async function send(
     }),
   });
 
-  const resp: types.Response | types.Error = await res.json();
+  const resp: types.Response = await res.json();
 
-  if (types.isError(resp)) {
+  if (resp.error) {
     // Fuck.
     throw resp.error.message; // well at least they know why the fuck it crashed??
   }
 
   messages.push(resp.choices[0].message);
 
-  callback("complete", resp);
+  resp.messages = messages;
+
+  if (callback) callback({ data: resp.choices[0].message.content }, true);
 
   return resp;
 }

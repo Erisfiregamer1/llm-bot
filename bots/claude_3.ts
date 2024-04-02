@@ -1,4 +1,4 @@
-import * as types from "./types.ts";
+import * as types from "../main.d.ts";
 
 export const requested_values = {
   env: ["ANTHROPIC_API_KEY"],
@@ -8,7 +8,7 @@ export const requested_values = {
 // const db = await Deno.openKv("./db.sqlite")
 
 function arrayBufferToBase64(buffer: ArrayBuffer) {
-  let binary = '';
+  let binary = "";
   const bytes = new Uint8Array(buffer);
   const len = bytes.byteLength;
   for (let i = 0; i < len; i++) {
@@ -38,7 +38,9 @@ export async function send(
       const imageType = img.headers.get("Content-Type");
 
       if (!imageType || !imageType.startsWith("image/")) {
-        throw new Error("Whoever's managing the images for this did an absolutely terrible job.");
+        throw new Error(
+          "Whoever's managing the images for this did an absolutely terrible job.",
+        );
       } else {
         const imageArrayBuffer = await img.arrayBuffer();
         console.log(imageArrayBuffer);
@@ -62,9 +64,8 @@ export async function send(
   // After all images are processed, push the text content
   contentarr.push({
     type: "text",
-    text: prompt!
+    text: prompt!,
   });
-
 
   let msg = {
     role: "user",

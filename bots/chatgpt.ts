@@ -1,82 +1,55 @@
-export let isEnabled = true;
-
-import * as types from "./types.ts";
-
-import * as vdb from "../vdb.ts";
-
-import { safeEval } from "../lib/eval.ts";
-
-if (!Deno.env.get("OPENAI_API_KEY")) {
-  console.warn("No OpenAI API key provided! ChatGPT will be unavailable.");
-  isEnabled = false;
-}
-// const db = await Deno.openKv("./db.sqlite")
+import * as types from "../main.d.ts";
 
 const tools: types.Tool[] = [{
   type: "function",
   function: {
-    name: "use-database",
+    name: "sanitycheck",
     description:
-      "Check the Vector Database for information on a subject. Irrelevant data means no relevant data is available.",
+      "Returns true, as a sanity check to make sure function support is OK. If this fails, something's fucked.",
     parameters: {
       type: "object",
       properties: {
-        query: {
+        useless: {
           type: "string",
-          description: "Request to send to database",
+          description:
+            "You can put whatever here, it's not going to do anything.",
         },
       },
-      required: ["query"],
-    },
-  },
-}, {
-  type: "function",
-  function: {
-    name: "eval",
-    description:
-      "Evaluates JS code within a heavily limited sandbox (a worker with no access other then network). Times out after 10 seconds.",
-    parameters: {
-      type: "object",
-      properties: {
-        code: {
-          type: "string",
-          description: "Code to be evaluated",
-        },
-      },
-      required: ["code"],
+      required: ["useless"],
     },
   },
 }];
 
+export const information = {
+  llmFileVersion: 1.0,
+  env: ["OPENAI_API_KEY"],
+  functions: true,
+  functionsData: tools,
+  multiModal: false,
+  callbackSupport: true,
+  streamingSupport: false,
+  id: "gpt3.5",
+  name: "GPT-3.5",
+  description:
+    "OpenAI's original flagship chat model, a low cost and quick to use model for general purposes.",
+};
+
 async function doTools(
-  oaires: types.Response,
-  messages: types.Message[],
-  callback: (type: string, data: types.Response) => void,
+  res: types.Response,
 ): Promise<types.Response> {
-  if (oaires.choices[0].finish_reason !== "tool_calls") {
+  if (res.choices[0].finish_reason !== "tool_calls") {
     throw "What The Shit?";
   }
 
-  const toolCalls = oaires.choices[0].message.tool_calls!;
+  const toolCalls = res.choices[0].message.tool_calls!;
 
+  // What if they happen to use it later?
+  // deno-lint-ignore require-await
   const promises = toolCalls.map(async (tool) => {
-    try {
-
-    if (tool.function.name === "use-database") {
-      const databaseResponse = await vdb.getRelevantDocument(
-        JSON.parse(tool.function.arguments).query,
-      );
-
+    if (tool.function.name === "sanitycheck") {
       return {
         role: "tool",
-        content: databaseResponse,
-        tool_call_id: tool.id,
-      };
-    } else if (tool.function.name === "eval") {
-      const respons = await safeEval(JSON.parse(tool.function.arguments).code);
-      return {
-        role: "tool",
-        content: respons,
+        content: "true",
         tool_call_id: tool.id,
       };
     } else {
@@ -84,52 +57,49 @@ async function doTools(
         role: "tool",
         content: "Unknown tool or not implemented",
         tool_call_id: tool.id,
+        //};
       };
     }
-  } catch (err) {
-    return {
-      role: "tool",
-      content: "Error occured processing tool!",
-      tool_call_id: tool.id,
-    };
-  }
   });
-
-
 
   // Use Promise.all to wait for all promises to resolve
   const results = await Promise.all(promises);
 
   results.forEach((result) => {
-    messages.push(result);
+    res.messages.push(result);
   });
 
-  const newres = await send(messages, null, "tool_res", callback);
+  const newres = await send("", res.messages);
 
-  return newres.resp;
+  console.log(newres);
+
+  return newres;
 }
 
 export async function send(
-  messages: types.Message[],
   prompt: string | null,
-  userid: string,
-  callback: (type: string, data: types.Response) => void,
-): Promise<types.llmFileResponseGPT> {
-  // here we go
+  messages: types.Message[],
+  callback?:
+    | ((information: types.callbackData, complete: boolean) => void)
+    | null,
+  requirements?: types.Requirements,
+): Promise<types.Response> {
+  if (!requirements?.env?.OPENAI_API_KEY) {
+    throw new DOMException("env.OPENAI_API_KEY", "NotFoundError");
+  }
 
-  if (!isEnabled) {
-    throw "not_enabled";
+  if (requirements.streaming) {
+    throw new DOMException("streaming", "NotSupportedError");
   }
 
   if (messages.length === 0) {
     messages.push({
       role: "system",
-      content:
-        "You are ChatGPT, an LLM by OpenAI. You are running through a Discord bot named LLM Bot, by Eris.",
+      content: "You are ChatGPT, an LLM by OpenAI.",
     });
   }
 
-  if (prompt !== null) {
+  if (prompt) {
     messages.push({
       role: "user",
       content: prompt,
@@ -140,35 +110,37 @@ export async function send(
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${Deno.env.get("OPENAI_API_KEY")}`,
+      Authorization: `Bearer ${requirements?.env.OPENAI_API_KEY}`,
     },
     body: JSON.stringify({
-      model: "gpt-3.5-turbo-16k",
+      model: "gpt-3.5-turbo",
       messages: messages,
-      user: userid,
       tools,
     }),
   });
 
-  let resp: types.Response | types.Error = await res.json();
+  let resp: types.Response = await res.json();
 
-  if (types.isError(resp)) {
-    // Fuck.
-    throw resp.error.message; // well at least they know why the fuck it crashed??
+  if (resp.error) {
+    throw new DOMException(resp.error.message, "ExecutionError");
   }
 
   messages.push(resp.choices[0].message);
 
-  if (resp.choices[0].finish_reason === "tool_calls") {
-    callback("function", resp);
+  resp.messages = messages;
 
-    resp = await doTools(resp, messages, callback);
-  } else {
-    callback("complete", resp);
+  if (resp.choices[0].finish_reason === "tool_calls") {
+    if (callback) {
+      callback({
+        toolCalls: resp.choices[0].message.tool_calls,
+        data: resp.choices[0].message.content,
+      }, false);
+    }
+    resp = await doTools(resp);
+    resp.choices[0].message.content = resp.choices[0].message.content as string;
   }
 
-  return {
-    resp,
-    messages,
-  };
+  if (callback) callback({ data: resp.choices[0].message.content }, true);
+
+  return resp;
 }

@@ -1,24 +1,94 @@
-export let isEnabled = true;
+import * as types from "../main.d.ts";
 
-import * as types from "./types.ts";
+const tools: types.Tool[] = [{
+  type: "function",
+  function: {
+    name: "sanitycheck",
+    description:
+      "Returns true, as a sanity check to make sure function support is OK. If this fails, something's fucked.",
+    parameters: {
+      type: "object",
+      properties: {
+        useless: {
+          type: "string",
+          description:
+            "You can put whatever here, it's not going to do anything.",
+        },
+      },
+      required: ["useless"],
+    },
+  },
+}];
 
-if (!Deno.env.get("OPENAI_API_KEY")) {
-  console.warn("No OpenAI API key provided! ChatGPT will be unavailable.");
-  isEnabled = false;
+export const information = {
+  llmFileVersion: 1.0,
+  env: ["OPENAI_API_KEY"],
+  functions: true,
+  functionsData: tools,
+  multiModal: true,
+  callbackSupport: true,
+  streamingSupport: false,
+  id: "gpt4v",
+  name: "GPT-4 Vision",
+  description: "A further upgraded version of GPT-4 with vision capabilities.",
+};
+
+async function doTools(
+  res: types.Response,
+): Promise<types.Response> {
+  if (res.choices[0].finish_reason !== "tool_calls") {
+    throw "What The Shit?";
+  }
+
+  const toolCalls = res.choices[0].message.tool_calls!;
+
+  // What if they happen to use it later?
+  // deno-lint-ignore require-await
+  const promises = toolCalls.map(async (tool) => {
+    if (tool.function.name === "sanitycheck") {
+      return {
+        role: "tool",
+        content: "true",
+        tool_call_id: tool.id,
+      };
+    } else {
+      return {
+        role: "tool",
+        content: "Unknown tool or not implemented",
+        tool_call_id: tool.id,
+        //};
+      };
+    }
+  });
+
+  // Use Promise.all to wait for all promises to resolve
+  const results = await Promise.all(promises);
+
+  results.forEach((result) => {
+    res.messages.push(result);
+  });
+
+  const newres = await send("", res.messages);
+
+  console.log(newres);
+
+  return newres;
 }
 
-// const db = await Deno.openKv("./db.sqlite")
-
 export async function send(
-  messages: types.Message[],
   prompt: string | null,
-  userid: string,
-  images: string[],
-): Promise<types.llmFileResponse> {
-  // here we go
+  messages: types.Message[],
+  callback?:
+    | ((information: types.callbackData, complete: boolean) => void)
+    | null,
+  requirements?: types.Requirements,
+): Promise<types.Response> {
+  if (!requirements?.env?.OPENAI_API_KEY) {
+    throw new DOMException("env.OPENAI_API_KEY", "NotFoundError");
+  }
 
-  if (!isEnabled) {
-    throw "not_enabled";
+  if (requirements.streaming) {
+    throw new DOMException("streaming", "NotSupportedError");
   }
 
   if (messages.length === 0) {
@@ -40,7 +110,7 @@ export async function send(
     });
   }
 
-  images.forEach((image_url) => {
+  requirements.images?.forEach((image_url) => {
     prompt_data.push({
       type: "image_url",
       image_url: {
@@ -54,35 +124,40 @@ export async function send(
     content: prompt_data,
   });
 
-  console.log(messages);
-
   const res = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${Deno.env.get("OPENAI_API_KEY")}`,
+      Authorization: `Bearer ${requirements?.env.OPENAI_API_KEY}`,
     },
     body: JSON.stringify({
       model: "gpt-4-vision-preview",
       messages: messages,
-      user: userid,
-      max_tokens: "2048",
     }),
   });
 
-  const resp: types.Response | types.Error = await res.json();
+  let resp: types.Response = await res.json();
 
-  if (types.isError(resp)) {
-    // Fuck.
-    throw resp.error.message; // well at least they know why the fuck it crashed??
+  if (resp.error) {
+    throw new DOMException(resp.error.message, "ExecutionError");
   }
-
-  const finalresp = {
-    resp,
-    messages,
-  };
 
   messages.push(resp.choices[0].message);
 
-  return finalresp;
+  resp.messages = messages;
+
+  if (resp.choices[0].finish_reason === "tool_calls") {
+    if (callback) {
+      callback({
+        toolCalls: resp.choices[0].message.tool_calls,
+        data: resp.choices[0].message.content,
+      }, false);
+    }
+    resp = await doTools(resp);
+    resp.choices[0].message.content = resp.choices[0].message.content as string;
+  }
+
+  if (callback) callback({ data: resp.choices[0].message.content }, true);
+
+  return resp;
 }
