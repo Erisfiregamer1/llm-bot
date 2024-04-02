@@ -9,16 +9,20 @@ type messageData = {
 
 import client from "./client.ts";
 
-import { walk } from "https://deno.land/std@0.221.0/fs/mod.ts";
+import { walk, existsSync } from "https://deno.land/std@0.221.0/fs/mod.ts";
 
 import * as path from "https://deno.land/std@0.221.0/path/mod.ts";
 
-import importLLMFile from "./lib/importLLMFile.ts";
+import importLLMFile from "./importLLMFile.ts";
+
+if (!existsSync("./bots")) {
+  throw new DOMException("Add the /bots directory and populate it with LLMFiles to use the bot! As an example, copy the directory from the Github.", "NoLLMsAddedError");
+} 
 
 for await (const entry of await walk("./bots")) {
   if (entry.isFile && entry.name.endsWith(".ts")) {
     await importLLMFile(
-      path.toFileUrl(path.resolve(`./${entry.path}`)).toString(),
+      `./${entry.path}`
     );
   }
 }

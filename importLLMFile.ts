@@ -1,6 +1,6 @@
 // Automatically imports an LLM File to the global object (availableLLMs) and gives you information about it so you don't have to waste time writing an implementation.
 
-import * as types from "../main.d.ts";
+import * as types from "./main.d.ts";
 
 export default async function importLLMFile(modulePath: string) {
   try {
