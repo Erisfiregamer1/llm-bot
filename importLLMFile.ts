@@ -2,13 +2,15 @@
 
 import * as types from "./main.d.ts";
 
+import { dynamicImport } from 'https://deno.land/x/import/mod.ts';
+
 export default async function importLLMFile(modulePath: string) {
   try {
     if (!globalThis.availableLLMs) {
       globalThis.availableLLMs = {};
     }
 
-    const module: types.llmFile = await import(`${modulePath}`);
+    const module: types.llmFile = await dynamicImport(`${modulePath}`, { force: true });
 
     if (module && module.information && typeof module.send === "function") {
       globalThis.availableLLMs[module.information.id] = {
@@ -23,7 +25,7 @@ export default async function importLLMFile(modulePath: string) {
       return null; // Return null if the module doesn't have the required exports
     }
   } catch (error) {
-    console.error(`Error importing module ${modulePath}':`, error);
+    if (Deno.env.get("debug") === "true") console.error(`Error importing module ${modulePath}':`, error);
     return null; // Return null if there's an error importing the module
   }
 }

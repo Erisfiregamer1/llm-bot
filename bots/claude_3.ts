@@ -1,10 +1,5 @@
 import * as types from "../main.d.ts";
 
-export const requested_values = {
-  env: ["ANTHROPIC_API_KEY"],
-  images: true,
-};
-
 // const db = await Deno.openKv("./db.sqlite")
 
 function arrayBufferToBase64(buffer: ArrayBuffer) {

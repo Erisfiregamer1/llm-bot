@@ -1,5 +1,3 @@
-export let isEnabled = true;
-
 import * as types from "../main.d.ts";
 
 if (!Deno.env.get("OPENAI_API_KEY")) {
