@@ -2,7 +2,7 @@
 
 import * as types from "./main.d.ts";
 
-import { dynamicImport } from 'https://deno.land/x/import/mod.ts';
+import { build } from "https://deno.land/x/esbuild@v0.20.2/mod.js"
 
 export default async function importLLMFile(modulePath: string) {
   try {
@@ -10,13 +10,35 @@ export default async function importLLMFile(modulePath: string) {
       globalThis.availableLLMs = {};
     }
 
-    const module: types.llmFile = await dynamicImport(`${modulePath}`, { force: true });
+    const tsCode = await Deno.readTextFile(Deno.cwd() + `/${modulePath}`);
+
+  const { outputFiles } = await build({
+    stdin: {
+      contents: tsCode,
+      loader: "ts",
+    },
+    bundle: true,
+    write: false,
+    format: "esm", // Specify output format as ESM
+  });
+
+  const jsCode = outputFiles[0].text;
+
+  const base64Data = btoa(jsCode);
+
+// Create the Data URL
+const dataURL = `data:text/plain;base64,${base64Data}`;
+
+    const module: types.llmFile = await import(dataURL)
+
+
 
     if (module && module.information && typeof module.send === "function") {
       globalThis.availableLLMs[module.information.id] = {
         information: module.information,
         send: module.send,
-      };
+      }
+
       return module.information; // Return the information object
     } else {
       console.error(

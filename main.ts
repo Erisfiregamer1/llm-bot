@@ -11,8 +11,6 @@ import client from "./client.ts";
 
 import { walk, existsSync } from "https://deno.land/std@0.221.0/fs/mod.ts";
 
-import * as path from "https://deno.land/std@0.221.0/path/mod.ts";
-
 import importLLMFile from "./importLLMFile.ts";
 
 if (!existsSync("./bots")) {
@@ -22,7 +20,7 @@ if (!existsSync("./bots")) {
 for await (const entry of await walk("./bots")) {
   if (entry.isFile && entry.name.endsWith(".ts")) {
     await importLLMFile(
-      `./${entry.path}`
+      entry.path
     );
   }
 }

@@ -86,11 +86,6 @@ export async function send(
 
   const resp: types.claudeResponse | types.Error = await res.json();
 
-  if (types.isError(resp)) {
-    // Fuck.
-    throw resp.error.message; // well at least they know why the fuck it crashed??
-  }
-
   messages.push({ role: "assistant", content: resp.content[0].text });
 
   const fresp = {
