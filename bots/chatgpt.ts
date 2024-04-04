@@ -20,8 +20,8 @@ const tools: types.Tool[] = [{
   },
 }];
 
-export const information = {
-  llmFileVersion: 1.0,
+export const information: types.information = {
+  llmFileVersion: "1.0",
   env: ["OPENAI_API_KEY"],
   functions: true,
   functionsData: tools,
@@ -32,6 +32,7 @@ export const information = {
   name: "GPT-3.5",
   description:
     "OpenAI's original flagship chat model, a low cost and quick to use model for general purposes.",
+  highCostLLM: false
 };
 
 async function doTools(

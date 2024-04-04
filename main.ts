@@ -1,14 +1,5 @@
 /// <reference lib="deno.unstable" />
 
-import * as types from "./main.d.ts";
-
-type messageData = {
-  id: string;
-  messages: types.Message[];
-};
-
-import client from "./client.ts";
-
 import { walk, existsSync } from "https://deno.land/std@0.221.0/fs/mod.ts";
 
 import importLLMFile from "./importLLMFile.ts";
@@ -25,12 +16,21 @@ for await (const entry of await walk("./bots")) {
   }
 }
 
+import * as types from "./main.d.ts";
+
+type messageData = {
+  id: string;
+  messages: types.Message[];
+};
+
+import client from "./client.ts";
+
+
 console.log(
   "Everything looks good!",
   Object.keys(availableLLMs).length,
   "LLMs were imported.",
 );
-
 
 await import("./slashcode.ts");
 
@@ -127,10 +127,24 @@ const getImagesFromMessage = async (message: Message<boolean>) => {
 };
 
 client.on("messageCreate", async (message) => {
+  let isBotChannel = (await db.get<boolean>([
+      "channels",
+      message.channel.id
+    ])).value;
+
+    if (isBotChannel === null) { 
+      await db.set(
+        ["channels", message.channel.id],
+        false,
+      );
+
+      isBotChannel = false
+    }
+
   if (message.author.bot || JSON.stringify(message.flags) === "4096") return; // The "4096" flag is the @silent flag on discord.
   if (
     message.channel.type === ChannelType.DM ||
-    message.channel.id === "1083904151479652392"
+    isBotChannel
   ) {
     let error = false; // Tracks if we've already pestered the user with an error / message :\
 
@@ -151,6 +165,20 @@ client.on("messageCreate", async (message) => {
         "Your current LLM is corrupted or removed! Set a new LLM at /set-ai!",
       );
       return
+    }
+
+    if (availableLLMs[llm].information.highCostLLM && Deno.env.get("PREMIUM_ENFORCEMENT") === "true") {
+      const guild = client.guilds.resolve(Deno.env.get("PRIMARY_GUILD") || "0");
+      if (guild) {
+        const member = await guild?.members.fetch(message.author.id);
+        if (!member.premiumSince && Deno.env.get("PRIMARY_GUILD") !== message.guild?.id) {
+          message.reply("This LLM is for premium users only! Boost the server to gain access to this LLM, or join the bot host's primary server!")
+          return
+        }
+      } else {
+        message.reply("your developer is terrible at his job (Premium lock config not set properly! This LLM is marked as high-cost, have the owner of the bot finish setup.)")
+        return
+      }
     }
 
     let isMessageProcessing = (await db.get<boolean>([

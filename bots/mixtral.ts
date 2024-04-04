@@ -1,7 +1,7 @@
 import * as types from "../main.d.ts";
 
-export const information = {
-  llmFileVersion: 1.0,
+export const information: types.information = {
+  llmFileVersion: "1.0",
   env: ["GROQ_API_KEY"],
   functions: false,
   multiModal: false,
@@ -10,6 +10,7 @@ export const information = {
   id: "mixtral-groq",
   name: "Mixtral (Groq)",
   description: "Mistral's MOE model. Powered by Groq!",
+  highCostLLM: false
 };
 
 // const db = await Deno.openKv("./db.sqlite")

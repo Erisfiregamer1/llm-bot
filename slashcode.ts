@@ -45,115 +45,121 @@ command2.setDescription(
 );
 
 const command3 = new SlashCommandBuilder();
-command3.setName("add-channel");
-command3.setDescription("For server management! Make the bot use a channel.");
-command3.setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels);
-command3.addChannelOption((option) =>
-  option.setName("channel").setDescription("Channel to add to bot").setRequired(
-    true,
-  )
-);
-
-const command4 = new SlashCommandBuilder();
-command4.setName("remove-channel");
-command4.setDescription(
-  "For server management! Removes the bot from a channel.",
-);
-command4.setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels);
-command4.addChannelOption((option) =>
-  option.setName("channel").setDescription("Channel to remove from bot")
-    .setRequired(true)
-);
-
-const command5 = new SlashCommandBuilder();
-command5.setName("ban");
-command5.setDescription(
+command3.setName("ban");
+command3.setDescription(
   "Bans a user from being able to use the bot! THIS IS FOR THE BOT DEVELOPER!!!",
 );
-command5.addStringOption((option) =>
+command3.addStringOption((option) =>
   option.setName("id").setDescription("UserID to send to brazil").setRequired(
     true,
   )
 );
 
-const command6 = new SlashCommandBuilder();
-command6.setName("unban");
-command6.setDescription(
+const command4 = new SlashCommandBuilder();
+command4.setName("unban");
+command4.setDescription(
   "Unbans a user from the bot! THIS IS FOR THE BOT DEVELOPER!!!",
 );
-command6.addStringOption((option) =>
+command4.addStringOption((option) =>
   option.setName("id").setDescription("UserID to remove from brazil")
     .setRequired(true)
 );
 
+const command5 = new SlashCommandBuilder();
+command5.setName("remove-conversation");
+command5.setDescription("Removes a conversation from your list.");
+
+const command6 = new SlashCommandBuilder();
+command6.setName("set-conversation");
+command6.setDescription("Choose which conversation you are using.");
+
 const command7 = new SlashCommandBuilder();
-command7.setName("remove-conversation");
-command7.setDescription("Removes a conversation from your list.");
+command7.setName("view-conversation");
+command7.setDescription("See what conversations you have.");
 
 const command8 = new SlashCommandBuilder();
-command8.setName("set-conversation");
-command8.setDescription("Choose which conversation you are using.");
+command8.setName("new-conversation");
+command8.setDescription("Start a new conversation with your chosen AI.");
 
 const command9 = new SlashCommandBuilder();
-command9.setName("view-conversation");
-command9.setDescription("See what conversations you have.");
+command9.setName("set-ai");
+command9.setDescription("Switch between the options for using this bot.");
 
 const command10 = new SlashCommandBuilder();
-command10.setName("new-conversation");
-command10.setDescription("Start a new conversation with your chosen AI.");
-
-const command11 = new SlashCommandBuilder();
-command11.setName("set-ai");
-command11.setDescription("Switch between the options for using this bot.");
-
-const command12 = new SlashCommandBuilder();
-command12.setName("create-image");
-command12.setDescription(
+command10.setName("create-image");
+command10.setDescription(
   "Create a 1024x1024 image using Stable Diffusion! (Powered by Salad.com)",
 );
-command12.addStringOption((option) =>
+command10.addStringOption((option) =>
   option.setName("prompt").setDescription(
     "Prompt to be sent to Stable Diffusion",
   ).setRequired(true)
 );
 
-const command13 = new SlashCommandBuilder();
-command13.setName("get-image");
-command13.setDescription("Get an image that was made by Stable Diffusion.");
+const command11 = new SlashCommandBuilder();
+command11.setName("get-image");
+command11.setDescription("Get an image that was made by Stable Diffusion.");
 
-const command14 = new SlashCommandBuilder();
-command14.setName("add-document");
-command14.setDescription(
+const command12 = new SlashCommandBuilder();
+command12.setName("add-document");
+command12.setDescription(
   "Add a document to this bot's information database (Powered by Supabase).",
 );
-command14.setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels);
-command14.addStringOption((option) =>
+command12.setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels);
+command12.addStringOption((option) =>
   option.setName("file-name").setDescription(
     "The name of the file for the vector database.",
   ).setRequired(true)
 );
-command14.addAttachmentOption((option) =>
+command12.addAttachmentOption((option) =>
   option.setName("file").setDescription("The file to be added to the database.")
     .setRequired(true)
 );
 
-const command15 = new SlashCommandBuilder();
-command15.setName("create-image-bingchat");
-command15.setDescription(
+const command13 = new SlashCommandBuilder();
+command13.setName("create-image-bingchat");
+command13.setDescription(
   "Create an image using DALL-E 3! (Powered by Bing Chat Image Maker)",
 );
-command15.addStringOption((option) =>
+command13.addStringOption((option) =>
   option.setName("prompt").setDescription("Prompt to be sent to DALL-E 3")
     .setRequired(true)
 );
 
-const command16 = new SlashCommandBuilder();
-command16.setName("oops");
-command16.setDescription(
+const command14 = new SlashCommandBuilder();
+command14.setName("oops");
+command14.setDescription(
   "Bot crashed while sending a message? Use this to fix it.",
 );
 
-const botamt = 16;
+const command15 = new SlashCommandBuilder();
+command15.setName("channel");
+command15.setDefaultMemberPermissions(16)
+command15.setDescription(
+  "See what channels are set for usage on the bot in your server.",
+);
+command15.addSubcommand(subcommand =>
+  subcommand
+			.setName('add')
+			.setDescription('Designate a channel as one the bot should respond in.')
+			.addChannelOption(option =>
+        option.setName('channel')
+          .setRequired(true)
+          .setDescription('The channel to add the bot to')
+      )
+)
+command15.addSubcommand(subcommand =>
+  subcommand
+			.setName('remove')
+			.setDescription('Remove a channel the bot should respond in.')
+			.addChannelOption(option =>
+        option.setName('channel')
+          .setRequired(true)
+          .setDescription('The channel to remove the bot from')
+      )
+)
+
+const botamt = 15;
 for (let i = 1; i - 1 < botamt; i++) {
   const commandname = "command" + i;
   commands.push(eval(commandname));
@@ -165,7 +171,6 @@ const token: string = Deno.env.get("DISCORD_TOKEN")!;
 const rest = new REST({ version: "10" }).setToken(token);
 
 // Send slash commands to Discord, create event handler.
-client.on("ready", async () => {
   try {
     console.log("Started refreshing application (/) commands.");
 
@@ -179,7 +184,6 @@ client.on("ready", async () => {
   } catch (error) {
     console.error(error);
   }
-});
 
 client.on("interactionCreate", async (interaction) => {
   if (interaction.isStringSelectMenu()) {
@@ -408,5 +412,31 @@ client.on("interactionCreate", async (interaction) => {
         `You should be able to send messages now. "${llm}" no longer thinks you're in a conversation.`,
       ephemeral: true,
     });
+  }else if (interaction.commandName === "channel") {
+    const subcmd = interaction.options.getSubcommand()
+
+    const channel = interaction.options.getChannel("channel")
+
+    const gmember = await interaction.guild?.members.fetch(interaction.user)
+
+
+
+    if (!channel?.id || !interaction.guild?.channels.cache.has(channel.id) || gmember?.permissions.has(PermissionFlagsBits.ManageChannels)) { await interaction.reply({ content: `implode`, ephemeral: true }); return; }
+
+    if (subcmd === "add") { 
+      await db.set(
+        ["channels", channel?.id],
+        true,
+      );
+
+      await interaction.reply({ content: `Channel ${channel} added!`, ephemeral: true });
+    } else if (subcmd === "remove") { 
+      await db.set(
+        ["channels", channel?.id],
+        false,
+      );
+
+      await interaction.reply({ content: `Channel ${channel} removed!`, ephemeral: true });
+    }
   }
 });

@@ -71,6 +71,7 @@ export type information = {
   id: string;
   name: string;
   description: string;
+  highCostLLM: boolean;
 };
 
 export type Requirements = {

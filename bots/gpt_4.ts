@@ -20,8 +20,8 @@ const tools: types.Tool[] = [{
   },
 }];
 
-export const information = {
-  llmFileVersion: 1.0,
+export const information: types.information = {
+  llmFileVersion: "1.0",
   env: ["OPENAI_API_KEY"],
   functions: true,
   functionsData: tools,
@@ -32,6 +32,7 @@ export const information = {
   name: "GPT-4",
   description:
     "An upgraded version of ChatGPT (GPT-3.5). Much better at answering questions!",
+  highCostLLM: true
 };
 
 async function doTools(
