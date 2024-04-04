@@ -421,7 +421,7 @@ client.on("interactionCreate", async (interaction) => {
 
 
 
-    if (!channel?.id || !interaction.guild?.channels.cache.has(channel.id) || gmember?.permissions.has(PermissionFlagsBits.ManageChannels)) { await interaction.reply({ content: `implode`, ephemeral: true }); return; }
+    if (!channel?.id || !interaction.guild?.channels.cache.has(channel.id) || !gmember?.permissions.has(PermissionFlagsBits.ManageChannels)) { await interaction.reply({ content: `implode`, ephemeral: true }); return; }
 
     if (subcmd === "add") { 
       await db.set(
