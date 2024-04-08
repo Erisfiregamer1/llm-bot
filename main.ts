@@ -1,17 +1,20 @@
 /// <reference lib="deno.unstable" />
 
-import { walk, existsSync } from "https://deno.land/std@0.221.0/fs/mod.ts";
+import { existsSync, walk } from "https://deno.land/std@0.221.0/fs/mod.ts";
 
 import importLLMFile from "./importLLMFile.ts";
 
 if (!existsSync("./bots")) {
-  throw new DOMException("Add the /bots directory and populate it with LLMFiles to use the bot! As an example, copy the directory from the Github.", "NoLLMsAddedError");
-} 
+  throw new DOMException(
+    "Add the /bots directory and populate it with LLMFiles to use the bot! As an example, copy the directory from the Github.",
+    "NoLLMsAddedError",
+  );
+}
 
 for await (const entry of await walk("./bots")) {
   if (entry.isFile && entry.name.endsWith(".ts")) {
     await importLLMFile(
-      entry.path
+      entry.path,
     );
   }
 }
@@ -25,7 +28,6 @@ type messageData = {
 
 import client from "./client.ts";
 
-
 console.log(
   "Everything looks good!",
   Object.keys(availableLLMs).length,
@@ -38,24 +40,28 @@ import { ChannelType, Message } from "npm:discord.js";
 
 const db = await Deno.openKv("./db.sqlite");
 
-function splitStringIntoChunks(inputString: string | null, chunkSize: number) {
-  if (inputString === null) {
-    // i'm going insane
+function splitStringIntoChunks(
+  inputString: string,
+  chunkSize: number = 1999,
+): string[] {
+  const lines: string[] = inputString.split("\n");
+  const chunks: string[] = [];
+  let currentChunk: string = "";
 
-    return [
-      "oopsie daisy! we did a fucky wucky and gave a critical component null again >~<",
-    ];
+  for (const line of lines) {
+    if (currentChunk.length + line.length + 1 > chunkSize) {
+      chunks.push(currentChunk.trim());
+      currentChunk = line;
+    } else {
+      if (currentChunk) {
+        currentChunk += "\n";
+      }
+      currentChunk += line;
+    }
   }
 
-  const length = inputString.length;
-  const chunks = [];
-
-  if (length <= chunkSize) {
-    chunks.push(inputString);
-  } else {
-    for (let i = 0; i < length; i += chunkSize) {
-      chunks.push(inputString.slice(i, i + chunkSize));
-    }
+  if (currentChunk) {
+    chunks.push(currentChunk.trim());
   }
 
   return chunks;
@@ -128,18 +134,18 @@ const getImagesFromMessage = async (message: Message<boolean>) => {
 
 client.on("messageCreate", async (message) => {
   let isBotChannel = (await db.get<boolean>([
-      "channels",
-      message.channel.id
-    ])).value;
+    "channels",
+    message.channel.id,
+  ])).value;
 
-    if (isBotChannel === null) { 
-      await db.set(
-        ["channels", message.channel.id],
-        false,
-      );
+  if (isBotChannel === null) {
+    await db.set(
+      ["channels", message.channel.id],
+      false,
+    );
 
-      isBotChannel = false
-    }
+    isBotChannel = false;
+  }
 
   if (message.author.bot || JSON.stringify(message.flags) === "4096") return; // The "4096" flag is the @silent flag on discord.
   if (
@@ -156,7 +162,7 @@ client.on("messageCreate", async (message) => {
         "Looks like this is your first time using this bot! Run /info to learn how to use the full potential of this bot, and set your desired LLM using /set-ai!",
       );
       error = true;
-      return
+      return;
     } else if (
       !Object.prototype.hasOwnProperty.call(availableLLMs, llm)
     ) {
@@ -164,20 +170,30 @@ client.on("messageCreate", async (message) => {
       await message.reply(
         "Your current LLM is corrupted or removed! Set a new LLM at /set-ai!",
       );
-      return
+      return;
     }
 
-    if (availableLLMs[llm].information.highCostLLM && Deno.env.get("PREMIUM_ENFORCEMENT") === "true") {
+    if (
+      availableLLMs[llm].information.highCostLLM &&
+      Deno.env.get("PREMIUM_ENFORCEMENT") === "true"
+    ) {
       const guild = client.guilds.resolve(Deno.env.get("PRIMARY_GUILD") || "0");
       if (guild) {
         const member = await guild?.members.fetch(message.author.id);
-        if (!member.premiumSince && Deno.env.get("PRIMARY_GUILD") !== message.guild?.id) {
-          message.reply("This LLM is for premium users only! Boost the server to gain access to this LLM, or join the bot host's primary server!")
-          return
+        if (
+          !member.premiumSince &&
+          Deno.env.get("PRIMARY_GUILD") !== message.guild?.id
+        ) {
+          message.reply(
+            "This LLM is for premium users only! Boost the server to gain access to this LLM, or join the bot host's primary server!",
+          );
+          return;
         }
       } else {
-        message.reply("your developer is terrible at his job (Premium lock config not set properly! This LLM is marked as high-cost, have the owner of the bot finish setup.)")
-        return
+        message.reply(
+          "your developer is terrible at his job (Premium lock config not set properly! This LLM is marked as high-cost, have the owner of the bot finish setup.)",
+        );
+        return;
       }
     }
 
@@ -251,81 +267,80 @@ client.on("messageCreate", async (message) => {
 
     const msg = await message.reply("Sending message...");
 
-    const requirements = availableLLMs[llm].information
+    const requirements = availableLLMs[llm].information;
 
-    const reqobject: types.Requirements = {}
+    const reqobject: types.Requirements = {};
 
     if (requirements.multiModal) {
       const images: string[] = await getImagesFromMessage(message);
 
-      reqobject.images = images
+      reqobject.images = images;
     }
 
     if (requirements.env) {
-      reqobject.env = {}
+      reqobject.env = {};
 
       requirements.env.forEach((envValue) => {
         if (!Deno.env.get(envValue)) {
-          throw `Required env value "${envValue}" not found, add it to .env!`
+          throw `Required env value "${envValue}" not found, add it to .env!`;
         }
 
-        reqobject.env![envValue] = Deno.env.get(envValue)!
-     })
+        reqobject.env![envValue] = Deno.env.get(envValue)!;
+      });
 
-     reqobject.streaming = false // No.
-
+      reqobject.streaming = false; // No.
     }
-      try {
-        const resp = await availableLLMs[llm].send(
-          message.content,
-          curmsgs,
-          null,
-          reqobject
-        );
+    try {
+      const resp = await availableLLMs[llm].send(
+        message.content,
+        curmsgs,
+        null,
+        reqobject,
+      );
 
-        messages[curconv].messages = resp.messages;
+      messages[curconv].messages = resp.messages;
 
-        await db.set(
-          ["users", message.author.id, "conversations", llm],
-          messages,
-        );
+      await db.set(
+        ["users", message.author.id, "conversations", llm],
+        messages,
+      );
 
-        const messagechunks = splitStringIntoChunks(
-          resp.choices[0].message.content,
-          2000,
-        );
+      const messagechunks = splitStringIntoChunks(
+        resp.choices[0].message.content!,
+        2000,
+      );
 
-        let cvalue = 0;
+      let cvalue = 0;
 
-        messagechunks.forEach((chunk) => {
-          if (cvalue === 0) {
-            cvalue = 1;
-            isMessageProcessing = false;
+      messagechunks.forEach((chunk) => {
+        if (cvalue === 0) {
+          cvalue = 1;
+          isMessageProcessing = false;
 
-            db.set(
-              ["users", message.author.id, "messageWaiting"],
-              isMessageProcessing,
-            );
-            msg.edit(chunk);
-          } else {
-            message.reply(chunk);
-          }
-        });
-      } catch (err) {
-        isMessageProcessing = false;
+          db.set(
+            ["users", message.author.id, "messageWaiting"],
+            isMessageProcessing,
+          );
+          msg.edit(chunk);
+        } else {
+          message.reply(chunk);
+        }
+      });
+    } catch (err) {
+      isMessageProcessing = false;
 
-        db.set(
-          ["users", message.author.id, "messageWaiting"],
-          isMessageProcessing,
-        );
-        msg.edit(
-          "Something went catastrophically wrong! Please tell the bot host to check the logs, thaaaaanks",
-        );
-        console.error(
-          "hey dumbass this error got thrown, go check that thanks:",
-          err,
-        );
-        return;
-      }
+      db.set(
+        ["users", message.author.id, "messageWaiting"],
+        isMessageProcessing,
+      );
+      msg.edit(
+        "Something went catastrophically wrong! Please tell the bot host to check the logs, thaaaaanks",
+      );
+      console.error(
+        "hey dumbass this error got thrown, go check that thanks:",
+        err,
+      );
+      return;
+    }
   }
 });

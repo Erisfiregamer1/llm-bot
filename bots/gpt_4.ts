@@ -32,7 +32,7 @@ export const information: types.information = {
   name: "GPT-4",
   description:
     "An upgraded version of ChatGPT (GPT-3.5). Much better at answering questions!",
-  highCostLLM: true
+  highCostLLM: true,
 };
 
 async function doTools(

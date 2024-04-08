@@ -31,7 +31,7 @@ export const information: types.information = {
   id: "gpt4v",
   name: "GPT-4 Vision",
   description: "A further upgraded version of GPT-4 with vision capabilities.",
-  highCostLLM: true
+  highCostLLM: true,
 };
 
 async function doTools(

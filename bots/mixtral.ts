@@ -10,7 +10,7 @@ export const information: types.information = {
   id: "mixtral-groq",
   name: "Mixtral (Groq)",
   description: "Mistral's MOE model. Powered by Groq!",
-  highCostLLM: false
+  highCostLLM: false,
 };
 
 // const db = await Deno.openKv("./db.sqlite")

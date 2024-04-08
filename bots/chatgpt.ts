@@ -32,7 +32,7 @@ export const information: types.information = {
   name: "GPT-3.5",
   description:
     "OpenAI's original flagship chat model, a low cost and quick to use model for general purposes.",
-  highCostLLM: false
+  highCostLLM: false,
 };
 
 async function doTools(
@@ -85,6 +85,8 @@ export async function send(
     | null,
   requirements?: types.Requirements,
 ): Promise<types.Response> {
+  console.log(requirements)
+
   if (!requirements?.env?.OPENAI_API_KEY) {
     throw new DOMException("env.OPENAI_API_KEY", "NotFoundError");
   }
@@ -123,6 +125,7 @@ export async function send(
   let resp: types.Response = await res.json();
 
   if (resp.error) {
+    console.log(resp.error)
     throw new DOMException(resp.error.message, "ExecutionError");
   }
 

@@ -12,4 +12,5 @@ did some magijcks to the rest of the files idk man I forgor
 
 # 3/31/2024: April Fools, Idiot
 
-Reworked how LLMs are loaded, the bot is less of a full solution and more of a framework now
+Reworked how LLMs are loaded, the bot is less of a full solution and more of a
+framework now

@@ -1,6 +1,6 @@
 import client from "./client.ts";
 
-import * as types from "./main.d.ts"
+import * as types from "./main.d.ts";
 
 import { BingImageCreator } from "https://esm.sh/@timefox/bic-sydney@1.1.4";
 import crypto from "node:crypto";
@@ -134,30 +134,30 @@ command14.setDescription(
 
 const command15 = new SlashCommandBuilder();
 command15.setName("channel");
-command15.setDefaultMemberPermissions(16)
+command15.setDefaultMemberPermissions(16);
 command15.setDescription(
   "See what channels are set for usage on the bot in your server.",
 );
-command15.addSubcommand(subcommand =>
+command15.addSubcommand((subcommand) =>
   subcommand
-			.setName('add')
-			.setDescription('Designate a channel as one the bot should respond in.')
-			.addChannelOption(option =>
-        option.setName('channel')
-          .setRequired(true)
-          .setDescription('The channel to add the bot to')
-      )
-)
-command15.addSubcommand(subcommand =>
+    .setName("add")
+    .setDescription("Designate a channel as one the bot should respond in.")
+    .addChannelOption((option) =>
+      option.setName("channel")
+        .setRequired(true)
+        .setDescription("The channel to add the bot to")
+    )
+);
+command15.addSubcommand((subcommand) =>
   subcommand
-			.setName('remove')
-			.setDescription('Remove a channel the bot should respond in.')
-			.addChannelOption(option =>
-        option.setName('channel')
-          .setRequired(true)
-          .setDescription('The channel to remove the bot from')
-      )
-)
+    .setName("remove")
+    .setDescription("Remove a channel the bot should respond in.")
+    .addChannelOption((option) =>
+      option.setName("channel")
+        .setRequired(true)
+        .setDescription("The channel to remove the bot from")
+    )
+);
 
 const botamt = 15;
 for (let i = 1; i - 1 < botamt; i++) {
@@ -171,19 +171,19 @@ const token: string = Deno.env.get("DISCORD_TOKEN")!;
 const rest = new REST({ version: "10" }).setToken(token);
 
 // Send slash commands to Discord, create event handler.
-  try {
-    console.log("Started refreshing application (/) commands.");
+try {
+  console.log("Started refreshing application (/) commands.");
 
-    await rest.put(Routes.applicationCommands(appid), {
-      body: commands,
-    });
+  await rest.put(Routes.applicationCommands(appid), {
+    body: commands,
+  });
 
-    console.log("Successfully reloaded application (/) commands.");
+  console.log("Successfully reloaded application (/) commands.");
 
-    console.log("Loaded slash commands successfully!");
-  } catch (error) {
-    console.error(error);
-  }
+  console.log("Loaded slash commands successfully!");
+} catch (error) {
+  console.error(error);
+}
 
 client.on("interactionCreate", async (interaction) => {
   if (interaction.isStringSelectMenu()) {
@@ -273,16 +273,21 @@ client.on("interactionCreate", async (interaction) => {
     const options = [];
 
     for (const key in availableLLMs) {
-      const llm = availableLLMs[key]
+      const llm = availableLLMs[key];
 
       options.push({
         label: llm.information.name,
         value: llm.information.id,
         description: llm.information.description,
-      })
+      });
     }
 
-    if (options.length === 0) interaction.reply({content: "No available LLMs! Have the bot host check the logs.", ephemeral: true})
+    if (options.length === 0) {
+      interaction.reply({
+        content: "No available LLMs! Have the bot host check the logs.",
+        ephemeral: true,
+      });
+    }
 
     const select = new StringSelectMenuBuilder().setCustomId("set-ai")
       .setPlaceholder("Select an AI").addOptions(options);
@@ -412,31 +417,44 @@ client.on("interactionCreate", async (interaction) => {
         `You should be able to send messages now. "${llm}" no longer thinks you're in a conversation.`,
       ephemeral: true,
     });
-  }else if (interaction.commandName === "channel") {
-    const subcmd = interaction.options.getSubcommand()
+  } else if (interaction.commandName === "channel") {
+    const subcmd = interaction.options.getSubcommand();
 
-    const channel = interaction.options.getChannel("channel")
+    const channel = interaction.options.getChannel("channel");
 
-    const gmember = await interaction.guild?.members.fetch(interaction.user)
+    const gmember = await interaction.guild?.members.fetch(interaction.user);
 
+    if (
+      !channel?.id || !interaction.guild?.channels.cache.has(channel.id) ||
+      !gmember?.permissions.has(PermissionFlagsBits.ManageChannels)
+    ) {
+      await interaction.reply({
+        content: `Channel doesn't exist or you don't have Manage Channels`,
+        ephemeral: true,
+      });
+      return;
+    }
 
-
-    if (!channel?.id || !interaction.guild?.channels.cache.has(channel.id) || !gmember?.permissions.has(PermissionFlagsBits.ManageChannels)) { await interaction.reply({ content: `implode`, ephemeral: true }); return; }
-
-    if (subcmd === "add") { 
+    if (subcmd === "add") {
       await db.set(
         ["channels", channel?.id],
         true,
       );
 
-      await interaction.reply({ content: `Channel ${channel} added!`, ephemeral: true });
-    } else if (subcmd === "remove") { 
+      await interaction.reply({
+        content: `Channel ${channel} added!`,
+        ephemeral: true,
+      });
+    } else if (subcmd === "remove") {
       await db.set(
         ["channels", channel?.id],
         false,
       );
 
-      await interaction.reply({ content: `Channel ${channel} removed!`, ephemeral: true });
+      await interaction.reply({
+        content: `Channel ${channel} removed!`,
+        ephemeral: true,
+      });
     }
   }
 });
