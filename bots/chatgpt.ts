@@ -85,8 +85,6 @@ export async function send(
     | null,
   requirements?: types.Requirements,
 ): Promise<types.Response> {
-  console.log(requirements)
-
   if (!requirements?.env?.OPENAI_API_KEY) {
     throw new DOMException("env.OPENAI_API_KEY", "NotFoundError");
   }
@@ -125,7 +123,6 @@ export async function send(
   let resp: types.Response = await res.json();
 
   if (resp.error) {
-    console.log(resp.error)
     throw new DOMException(resp.error.message, "ExecutionError");
   }
 
