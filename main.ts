@@ -38,8 +38,8 @@ import { ChannelType, Message } from "npm:discord.js";
 
 const db = await Deno.openKv("./db.sqlite");
 
-function splitResponse(response: string, chunkSize: number = 1999): string[] {
-  const lines: string[] = response.split("\n");
+function splitStringIntoChunks(inputString: string, chunkSize: number = 1999): string[] {
+  const lines: string[] = inputString.split("\n");
   const chunks: string[] = [];
   let currentChunk: string = "";
 
