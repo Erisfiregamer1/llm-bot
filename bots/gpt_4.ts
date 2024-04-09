@@ -36,6 +36,10 @@ export const information: types.information = {
 
 async function doTools(
   res: types.Response,
+  callback?:
+    | ((information: types.callbackData, complete: boolean) => void)
+    | null,
+  requirements?: types.Requirements,
 ): Promise<types.Response> {
   if (res.choices[0].finish_reason !== "tool_calls") {
     throw "What The Shit?";
@@ -69,7 +73,7 @@ async function doTools(
     res.messages.push(result);
   });
 
-  const newres = await send("", res.messages);
+  const newres = await send("", res.messages, callback, requirements);
 
   console.log(newres);
 
