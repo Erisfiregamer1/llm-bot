@@ -25,13 +25,12 @@ export const information: types.information = {
   env: ["OPENAI_API_KEY"],
   functions: true,
   functionsData: tools,
-  multiModal: false,
+  multiModal: true,
   callbackSupport: true,
   streamingSupport: false,
   id: "gpt4",
   name: "GPT-4",
-  description:
-    "An upgraded version of ChatGPT (GPT-3.5). Much better at answering questions!",
+  description: "OpenAI's most powerful model, with vision support.",
   highCostLLM: true,
 };
 
@@ -96,16 +95,35 @@ export async function send(
   if (messages.length === 0) {
     messages.push({
       role: "system",
-      content: "You are ChatGPT, an LLM by OpenAI.",
+      content: [{
+        type: "text",
+        text: "You are ChatGPT, an LLM by OpenAI.",
+      }],
     });
   }
 
-  if (prompt) {
-    messages.push({
-      role: "user",
-      content: prompt,
+  const prompt_data: types.ContentPart[] = [];
+
+  if (prompt !== null) {
+    prompt_data.push({
+      type: "text",
+      text: prompt,
     });
   }
+
+  requirements.images?.forEach((image_url) => {
+    prompt_data.push({
+      type: "image_url",
+      image_url: {
+        url: image_url,
+      },
+    });
+  });
+
+  messages.push({
+    role: "user",
+    content: prompt_data,
+  });
 
   const res = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
@@ -114,9 +132,9 @@ export async function send(
       Authorization: `Bearer ${requirements?.env.OPENAI_API_KEY}`,
     },
     body: JSON.stringify({
-      model: "gpt-4-turbo-preview",
+      model: "gpt-4-turbo",
       messages: messages,
-      tools,
+      tools
     }),
   });
 
