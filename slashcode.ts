@@ -26,23 +26,53 @@ import {
   ColorResolvable,
   EmbedBuilder,
   PermissionFlagsBits,
+  RESTPostAPIChatInputApplicationCommandsJSONBody,
   SlashCommandBuilder,
   StringSelectMenuBuilder,
 } from "npm:discord.js";
 
-const commands: SlashCommandBuilder[] = [];
+function splitStringIntoChunks(
+  inputString: string,
+  chunkSize: number = 1999,
+): string[] {
+  const lines: string[] = inputString.split("\n");
+  const chunks: string[] = [];
+  let currentChunk: string = "";
+
+  for (const line of lines) {
+    if (currentChunk.length + line.length + 1 > chunkSize) {
+      chunks.push(currentChunk.trim());
+      currentChunk = line;
+    } else {
+      if (currentChunk) {
+        currentChunk += "\n";
+      }
+      currentChunk += line;
+    }
+  }
+
+  if (currentChunk) {
+    chunks.push(currentChunk.trim());
+  }
+
+  return chunks;
+}
+
+const commands: RESTPostAPIChatInputApplicationCommandsJSONBody[] = [];
 
 const db = await Deno.openKv("./db.sqlite");
 
 const command1 = new SlashCommandBuilder();
 command1.setName("info");
 command1.setDescription("Gives some information about this bot! :)");
+commands.push(command1.toJSON());
 
 const command2 = new SlashCommandBuilder();
 command2.setName("wipe");
 command2.setDescription(
   "Resets your conversation with your current AI, letting you start over.",
 );
+commands.push(command2.toJSON());
 
 const command3 = new SlashCommandBuilder();
 command3.setName("ban");
@@ -54,6 +84,7 @@ command3.addStringOption((option) =>
     true,
   )
 );
+commands.push(command3.toJSON());
 
 const command4 = new SlashCommandBuilder();
 command4.setName("unban");
@@ -64,26 +95,32 @@ command4.addStringOption((option) =>
   option.setName("id").setDescription("UserID to remove from brazil")
     .setRequired(true)
 );
+commands.push(command4.toJSON());
 
 const command5 = new SlashCommandBuilder();
 command5.setName("remove-conversation");
 command5.setDescription("Removes a conversation from your list.");
+commands.push(command5.toJSON());
 
 const command6 = new SlashCommandBuilder();
 command6.setName("set-conversation");
 command6.setDescription("Choose which conversation you are using.");
+commands.push(command6.toJSON());
 
 const command7 = new SlashCommandBuilder();
 command7.setName("view-conversation");
 command7.setDescription("See what conversations you have.");
+commands.push(command7.toJSON());
 
 const command8 = new SlashCommandBuilder();
 command8.setName("new-conversation");
 command8.setDescription("Start a new conversation with your chosen AI.");
+commands.push(command8.toJSON());
 
 const command9 = new SlashCommandBuilder();
 command9.setName("set-ai");
 command9.setDescription("Switch between the options for using this bot.");
+commands.push(command9.toJSON());
 
 const command10 = new SlashCommandBuilder();
 command10.setName("create-image");
@@ -95,10 +132,12 @@ command10.addStringOption((option) =>
     "Prompt to be sent to Stable Diffusion",
   ).setRequired(true)
 );
+commands.push(command10.toJSON());
 
 const command11 = new SlashCommandBuilder();
 command11.setName("get-image");
 command11.setDescription("Get an image that was made by Stable Diffusion.");
+commands.push(command11.toJSON());
 
 const command12 = new SlashCommandBuilder();
 command12.setName("add-document");
@@ -115,6 +154,7 @@ command12.addAttachmentOption((option) =>
   option.setName("file").setDescription("The file to be added to the database.")
     .setRequired(true)
 );
+commands.push(command12.toJSON());
 
 const command13 = new SlashCommandBuilder();
 command13.setName("create-image-bingchat");
@@ -125,12 +165,14 @@ command13.addStringOption((option) =>
   option.setName("prompt").setDescription("Prompt to be sent to DALL-E 3")
     .setRequired(true)
 );
+commands.push(command13.toJSON());
 
 const command14 = new SlashCommandBuilder();
 command14.setName("oops");
 command14.setDescription(
   "Bot crashed while sending a message? Use this to fix it.",
 );
+commands.push(command14.toJSON());
 
 const command15 = new SlashCommandBuilder();
 command15.setName("channel");
@@ -158,12 +200,22 @@ command15.addSubcommand((subcommand) =>
         .setDescription("The channel to remove the bot from")
     )
 );
+commands.push(command15.toJSON());
 
-const botamt = 15;
-for (let i = 1; i - 1 < botamt; i++) {
-  const commandname = "command" + i;
-  commands.push(eval(commandname));
-}
+const command16 = new SlashCommandBuilder();
+command16.setName("send");
+command16.setDescription(
+  "Send a message to the bot.",
+);
+command16.addStringOption((option) =>
+  option.setName("prompt").setDescription("Prompt to be sent to your chosen LLM")
+    .setRequired(true)
+);
+commands.push(command16.toJSON());
+
+commands.forEach((obj) => {
+  obj.integration_types = [0, 1];
+});
 
 const appid: string = Deno.env.get("APP_ID")!;
 const token: string = Deno.env.get("DISCORD_TOKEN")!;
@@ -173,7 +225,7 @@ const rest = new REST({ version: "10" }).setToken(token);
 // Send slash commands to Discord, create event handler.
 try {
   console.log("Started refreshing application (/) commands.");
-
+  
   await rest.put(Routes.applicationCommands(appid), {
     body: commands,
   });
@@ -455,6 +507,181 @@ client.on("interactionCreate", async (interaction) => {
         content: `Channel ${channel} removed!`,
         ephemeral: true,
       });
+    }
+  } else if (interaction.commandName === "send") {
+    const llm =
+      (await db.get<string>(["users", interaction.user.id, "current_bot"])).value; // After reading the typedocs I realized this is the cleaner way to do this
+
+    if (llm === null) {
+      await interaction.reply({
+        content: "Looks like this is your first time using this bot! Run /info to learn how to use the full potential of this bot, and set your desired LLM using /set-ai!",
+        ephemeral: true
+      });
+      return;
+    } else if (
+      !Object.prototype.hasOwnProperty.call(availableLLMs, llm)
+    ) {
+      // current LLM is removed/corrupted
+      await interaction.reply({
+        content: "Your current LLM is corrupted or removed! Set a new LLM at /set-ai!",
+        ephemeral: true
+       });
+      return;
+    }
+
+    if (
+      availableLLMs[llm].information.highCostLLM &&
+      Deno.env.get("PREMIUM_ENFORCEMENT") === "true"
+    ) {
+      const guild = client.guilds.resolve(Deno.env.get("PRIMARY_GUILD") || "0");
+      if (guild) {
+        const member = await guild?.members.fetch(interaction.user.id);
+        if (
+          !member.premiumSince &&
+          Deno.env.get("PRIMARY_GUILD") !== interaction.guild?.id
+        ) {
+          interaction.reply({
+            content: "This LLM is for premium users only! Boost the server to gain access to this LLM, or join the bot host's primary server!",
+            ephemeral: true
+          });
+          return;
+        }
+      } else {
+        interaction.reply({
+          content: "your developer is terrible at his job (Premium lock config not set properly! This LLM is marked as high-cost, have the owner of the bot finish setup.)",
+          ephemeral: true
+         });
+        return;
+      }
+    }
+
+    let isMessageProcessing = (await db.get<boolean>([
+      "users",
+      interaction.user.id,
+      "messageWaiting",
+    ])).value;
+
+    if (isMessageProcessing) {
+        await interaction.reply({ 
+        content: "A message is already being processed!",
+        ephemeral: true
+      });
+      return
+    } else {
+      isMessageProcessing = true;
+
+      await db.set(
+        ["users", interaction.user.id, "messageWaiting"],
+        isMessageProcessing,
+      );
+    }
+
+    let curconv = (await db.get<number>([
+      "users",
+      interaction.user.id,
+      "current_conversation",
+    ])).value;
+
+    if (curconv === null) {
+      // They haven't used this LLM before
+      curconv = 0;
+      await db.set(
+        ["users", interaction.user.id, "current_conversation"],
+        curconv,
+      );
+    }
+
+    let messages = (await db.get<messageData[]>([
+      "users",
+      interaction.user.id,
+      "conversations",
+      llm,
+    ])).value!;
+
+    if (messages === null) {
+      // No conversations for this LLM.
+      messages = [{
+        id: "New Conversation",
+        messages: [],
+      }];
+    }
+
+    const curmsgs = messages[curconv].messages;
+
+    const msg = await interaction.deferReply({ephemeral: true})
+
+    const requirements = availableLLMs[llm].information;
+
+    const reqobject: types.Requirements = {};
+
+    /*if (requirements.multiModal) {
+      const images: string[] = await getImagesFromMessage(message);
+
+      reqobject.images = images;
+    }*/
+
+    if (requirements.env) {
+      reqobject.env = {};
+
+      requirements.env.forEach((envValue) => {
+        if (!Deno.env.get(envValue)) {
+          throw `Required env value "${envValue}" not found, add it to .env!`;
+        }
+
+        reqobject.env![envValue] = Deno.env.get(envValue)!;
+      });
+
+      reqobject.streaming = false; // No.
+    }
+    try {
+      const resp = await availableLLMs[llm].send(
+        interaction.options.getString("prompt")!,
+        curmsgs,
+        null,
+        reqobject,
+      );
+
+      messages[curconv].messages = resp.messages;
+
+      await db.set(
+        ["users", interaction.user.id, "conversations", llm],
+        messages,
+      );
+
+      const messagechunks = splitStringIntoChunks(
+        resp.choices[0].message.content!,
+        2000,
+      );
+
+      let cvalue = 0;
+
+      messagechunks.forEach((chunk) => {
+        if (cvalue === 0) {
+          cvalue = 1;
+          isMessageProcessing = false;
+
+          db.set(
+            ["users", interaction.user.id, "messageWaiting"],
+            isMessageProcessing,
+          );
+          msg.edit(chunk);
+        }
+      });
+    } catch (err) {
+      isMessageProcessing = false;
+
+      db.set(
+        ["users", interaction.user.id, "messageWaiting"],
+        isMessageProcessing,
+      );
+      msg.edit(
+        "Something went catastrophically wrong! Please tell the bot host to check the logs, thaaaaanks",
+      );
+      console.error(
+        "hey dumbass this error got thrown, go check that thanks:",
+        err,
+      );
+      return;
     }
   }
 });

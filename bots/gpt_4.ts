@@ -73,7 +73,7 @@ async function doTools(
     res.messages.push(result);
   });
 
-  const newres = await send("", res.messages, callback, requirements);
+  const newres = await send(null, res.messages, callback, requirements);
 
   console.log(newres);
 
@@ -138,7 +138,7 @@ export async function send(
     body: JSON.stringify({
       model: "gpt-4-turbo",
       messages: messages,
-      tools
+      tools,
     }),
   });
 
@@ -159,7 +159,7 @@ export async function send(
         data: resp.choices[0].message.content,
       }, false);
     }
-    resp = await doTools(resp);
+    resp = await doTools(resp, null, requirements);
     resp.choices[0].message.content = resp.choices[0].message.content as string;
   }
 

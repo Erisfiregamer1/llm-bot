@@ -9,7 +9,7 @@ export type TextContent = {
 export type ImageContentPart = {
   type: "image_url";
   image_url: {
-    url: string; // URL or base64 encoded image data
+    url: string;
     detail?: string; // Optional, defaults to 'auto'
   };
 };
