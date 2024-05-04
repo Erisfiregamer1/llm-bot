@@ -36,7 +36,7 @@ export async function send(
     messages.push({
       role: "system",
       content:
-        "You are Mixtral, an LLM by Mistral AI. You are running through a Discord bot named LLM Bot, by Eris.",
+        "You are Llama, an LLM by Meta. You are running through a Discord bot named LLM Bot, by Eris.",
     });
   }
 
