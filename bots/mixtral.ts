@@ -107,10 +107,12 @@ export async function send(
     });
   }
 
-  messages.push({
-    role: "user",
-    content: prompt,
-  });
+  if (prompt) {
+    messages.push({
+      role: "user",
+      content: prompt,
+    });
+  }
 
   const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
@@ -121,6 +123,7 @@ export async function send(
     body: JSON.stringify({
       model: "mixtral-8x7b-32768",
       messages: messages,
+      tools
     }),
   });
 

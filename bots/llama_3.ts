@@ -63,7 +63,6 @@ async function doTools(
         role: "tool",
         content: "Unknown tool or not implemented",
         tool_call_id: tool.id,
-        //};
       };
     }
   });
@@ -107,10 +106,12 @@ export async function send(
     });
   }
 
-  messages.push({
-    role: "user",
-    content: prompt,
-  });
+  if (prompt) {
+    messages.push({
+      role: "user",
+      content: prompt,
+    });
+  }
 
   const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
@@ -121,6 +122,7 @@ export async function send(
     body: JSON.stringify({
       model: "llama3-70b-8192",
       messages: messages,
+      tools
     }),
   });
 

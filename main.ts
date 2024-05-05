@@ -287,9 +287,10 @@ client.on("messageCreate", async (message) => {
 
         reqobject.env![envValue] = Deno.env.get(envValue)!;
       });
-
-      reqobject.streaming = false; // No.
     }
+
+    reqobject.streaming = false; // No.
+  
     try {
       const resp = await availableLLMs[llm].send(
         message.content,
