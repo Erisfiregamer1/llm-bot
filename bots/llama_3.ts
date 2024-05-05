@@ -8,7 +8,7 @@ export const information: types.information = {
   callbackSupport: true,
   streamingSupport: false,
   id: "llama3-groq",
-  name: "Llama 3 Groq",
+  name: "Llama 3 70b (Groq)",
   description: "Meta's new flagship model. Powered by Groq!",
   highCostLLM: false,
 };
