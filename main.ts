@@ -2,7 +2,7 @@
 
 import { existsSync, walk } from "https://deno.land/std@0.221.0/fs/mod.ts";
 
-import importLLMFile from "./importLLMFile.ts";
+import importLLMFile from "./lib/importLLMFile.ts";
 
 if (!existsSync("./bots")) {
   throw new DOMException(
@@ -18,6 +18,8 @@ for await (const entry of await walk("./bots")) {
     );
   }
 }
+
+console.log("LLMs initialized.")
 
 import * as types from "./main.d.ts";
 
@@ -335,10 +337,10 @@ client.on("messageCreate", async (message) => {
         isMessageProcessing,
       );
       msg.edit(
-        "Something went catastrophically wrong! Please tell the bot host to check the logs, thaaaaanks",
+        "LLM threw an error in processing! Contact the admins to have them handle and report the bug.",
       );
       console.error(
-        "hey dumbass this error got thrown, go check that thanks:",
+        `Model ${llm} threw an error! If you can't understand the error, contact the developer (Eris) for help. Error:`,
         err,
       );
       return;

@@ -1,8 +1,8 @@
 // Automatically imports an LLM File to the global object (availableLLMs) and gives you information about it so you don't have to waste time writing an implementation.
 
-import * as types from "./main.d.ts";
+import * as types from "../main.d.ts";
 
-import { build } from "https://deno.land/x/esbuild@v0.20.2/mod.js";
+import { build, transform } from "https://deno.land/x/esbuild@v0.20.2/mod.js";
 
 export default async function importLLMFile(modulePath: string) {
   try {
@@ -12,19 +12,11 @@ export default async function importLLMFile(modulePath: string) {
 
     const tsCode = await Deno.readTextFile(Deno.cwd() + `/${modulePath}`);
 
-    const { outputFiles } = await build({
-      stdin: {
-        contents: tsCode,
-        loader: "ts",
-      },
-      bundle: true,
-      write: false,
-      format: "esm", // Specify output format as ESM
+    const { code } = await transform(tsCode, {
+      loader: "ts",
     });
 
-    const jsCode = outputFiles[0].text;
-
-    const base64Data = btoa(jsCode);
+    const base64Data = btoa(code);
 
     // Create the Data URL
     const dataURL = `data:text/plain;base64,${base64Data}`;
